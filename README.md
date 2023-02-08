@@ -8,6 +8,11 @@ It is used for an actual mobile app used in the transportation industry for exam
 [Example](https://github.com/Maurycy-Sokolowski/MetaDSL/tree/main/examples) is a ready made example with a fully compiled parser and supporting files. You can open the index.html inside a web browser and open it with ?dev to see the script and modify it.
 The web broswer console can provide you with error messages and it can be debugged in the web browser too if using a debug version of the parser (i.e sbt fastLinkJS instead of fullLinkJS).
 
+# Under the hood
+Hardcore Scala project using parser combinators inisde ScalaJS which might be a first and a concise and simplified architecture. The key here is a sophisticated core creating an external DSL that can be understood by anyone so the minutiae of details and compilation are abstraced away. Hopefully not too much of a [leaky abstraction](https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions).
+
+A user can also edit and modify a script and load it using a web browser as a development tool, which also might be a first. The ultimate philosophy is one of agility and simplification of needless complexity which is delegated to the selfdomly modified parser core.
+
 # Building
 - sbt fullLinkJS (used by index.html)
 
