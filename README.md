@@ -3,6 +3,9 @@ Parser and interpreter to create slick mobile applications without being a devel
 It uses onsen UI but can be modified to use other libraries.
 Idea is allow a specialized developer to only modify the parser for the external DSL and non developers with basic understanding of the DSL can create applications.
 
+In the folder examples is a ready made example with a fully compiled parser and supporting files. You can open the index.html inside a web browser and open it with ?dev to see the script and modify it.
+The web broswer console can provide you with error messages and it can be debugged in the web browser too if using a debug version of the parser (i.e sbt fastLinkJS instead of fullLinkJS).
+
 # Building
 sbt fullLinkJS
 
