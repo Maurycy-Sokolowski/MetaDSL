@@ -1,9 +1,9 @@
 # MetaDSL
 Parser and interpreter to create slick mobile applications without being a developer.
 It uses onsen UI but can be modified to use other libraries.
-Idea is allow a specialized developer to only modify the parser for the external DSL and non developers with basic understanding of the DSL can create applications.
+Idea is allow a specialized developer to only modify the parser for the external DSL and non developers with basic understanding of the DSL can create applications without knowledge of underlying CSS and other constraints and concentrate purely on workflow and business logic.
 Flow through windows and remote queries are supported as well as checklists and this project will hopefully be expanded for the benefit of many.
-It is used for an actual mobile app used in the transportation industry for example.
+It is used for an actual mobile app used in the transportation industry for example. A script meant for each login can also be loaded so the possibilities are extensive in terms of customization.
 
 [Example](https://github.com/Maurycy-Sokolowski/MetaDSL/tree/main/examples) is a ready made example with a fully compiled parser and supporting files. You can open the index.html inside a web browser and open it with ?dev to see the script and modify it.
 The web broswer console can provide you with error messages and it can be debugged in the web browser too if using a debug version of the parser (i.e sbt fastLinkJS instead of fullLinkJS).
