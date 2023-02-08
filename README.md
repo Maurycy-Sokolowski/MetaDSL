@@ -1,7 +1,7 @@
 # MetaDSL
 Parser and interpreter to create slick mobile applications without being a developer.
 It uses [Onsen UI](https://onsen.io/) but can be modified to use other libraries.
-Idea is allow a specialized developer to only modify the parser for the external DSL, and rarely at that, and have non developers with basic understanding of the DSL can create applications without knowledge of underlying CSS and other constraints and concentrate purely on workflow and business logic.
+Idea is allow a specialized developer to only modify the parser for the external DSL, and rarely at that, and have non developers with basic understanding of the DSL create applications without knowledge of underlying CSS and other constraints and concentrate purely on workflow and business logic.
 Flow through windows and remote queries are supported as well as checklists and this project will hopefully be expanded for the benefit of many.
 It is used for an actual mobile app used in the transportation industry for example. A script meant for each login can also be loaded so the possibilities are extensive in terms of customization.
 
