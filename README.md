@@ -9,7 +9,10 @@ It is used for an actual mobile app used in the transportation industry for exam
 The web broswer console can provide you with error messages and it can be debugged in the web browser too if using a debug version of the parser (i.e sbt fastLinkJS instead of fullLinkJS).
 
 # Building
-sbt fullLinkJS
+sbt fullLinkJS (used by index.html)
+sbt fastLinkJS (used by index-dev.html)
+
+Refer to [ScalaJS docs](https://www.scala-js.org/doc/project/building.html) for more info.
 
 Add index.html or index-dev.html and script.js file containing the script using the externally defined DSL to the directory local to the optimized JS.
 
