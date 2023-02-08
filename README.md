@@ -10,6 +10,7 @@ The web broswer console can provide you with error messages and it can be debugg
 
 # Building
 sbt fullLinkJS (used by index.html)
+
 sbt fastLinkJS (used by index-dev.html)
 
 Refer to [ScalaJS docs](https://www.scala-js.org/doc/project/building.html) for more info.
