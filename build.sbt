@@ -1,7 +1,7 @@
 enablePlugins(ScalaJSPlugin)
 enablePlugins(JSDependenciesPlugin)
 
-name := "iW8"
+name := "MetaDSL"
 
 organization := "Berrye Inc."
 
