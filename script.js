@@ -96,7 +96,7 @@ var staticScript = `site "Some App" with {
             column  "name" as "Product Name"
             column "unitPrice" as "Unit Price" format "$ %5.2f"
             column "unitName" as "Unit"
-            column "productGroupId" as "Product Type" format "name" is "id" dropdown "https://api.scaleitusa.com/api/scaleit/v1/productgroups/" use {
+            column "productGroupId" as "Product Type" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -104,7 +104,7 @@ var staticScript = `site "Some App" with {
             add
                 "name" is "Name" required
                 "unitPrice" is "Unit Price" format "$ %5.2f"
-                "unitId" is "Unit" format "name" is "id" dropdown "https://api.scaleitusa.com/api/scaleit/v1/units/" use {
+                "unitId" is "Unit" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"
@@ -113,7 +113,7 @@ var staticScript = `site "Some App" with {
             edit with delete
                 "name" is "Name" required
                 "unitPrice" is "Unit Price" format "$ %5.2f"
-                "unitId" is "Unit" format "name" is "id" dropdown "https://api.scaleitusa.com/api/scaleit/v1/units/" use {
+                "unitId" is "Unit" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"

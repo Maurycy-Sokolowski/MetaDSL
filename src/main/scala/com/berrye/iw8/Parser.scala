@@ -224,15 +224,15 @@ object WebParser extends JavaTokenParsers with Positional {
           pages += s -> (() => {
             searchablePanel = None
             if (header.isDefined) {
-					  	queryServer(queryFormat(header.get.query, "days=365"), (data: js.Any) => {
-					      val l = data.asInstanceOf[js.Array[js.Dynamic]].toList
-					      val mth = Map(0 -> "JAN", 1 -> "FEB", 2 -> "MAR", 3 -> "APR", 4 -> "MAY", 5 -> "JUN", 6 -> "JUL", 7 -> "AUG", 8 -> "SEP", 9 -> "OCT", 10 ->"NOV", 11 -> "DEC")
-					      val cm = Moment().month().asInstanceOf[Int]
-						    def hier(i: Int, f: Int) = if (i < f) i else i - 12
-					      val pr = l.foldLeft(Map[Int, Int]())((m, v) => {
-                  val dt = Try(Moment(v.extractV(header.get.timeField.get).asInstanceOf[Int])).getOrElse(Moment(v.recordCreated.asInstanceOf[String])).month().asInstanceOf[Int]
-                  mergeIntSum(m, Map(dt -> 1))
-					      }).toSeq.sortWith((v1, v2) => hier(v1._1,cm) < hier(v2._1, cm)).map(e => (mth(e._1), e._2))
+                queryServer(queryFormat(header.get.query, "days=365"), (data: js.Any) => {
+                    val l = data.asInstanceOf[js.Array[js.Dynamic]].toList
+                    val mth = Map(0 -> "JAN", 1 -> "FEB", 2 -> "MAR", 3 -> "APR", 4 -> "MAY", 5 -> "JUN", 6 -> "JUL", 7 -> "AUG", 8 -> "SEP", 9 -> "OCT", 10 ->"NOV", 11 -> "DEC")
+                    val cm = Moment().month().asInstanceOf[Int]
+                    def hier(i: Int, f: Int) = if (i < f) i else i - 12
+                    val pr = l.foldLeft(Map[Int, Int]())((m, v) => {
+                        val dt = Try(Moment(v.extractV(header.get.timeField.get).asInstanceOf[Int])).getOrElse(Moment(v.recordCreated.asInstanceOf[String])).month().asInstanceOf[Int]
+                        mergeIntSum(m, Map(dt -> 1))
+					}).toSeq.sortWith((v1, v2) => hier(v1._1,cm) < hier(v2._1, cm)).map(e => (mth(e._1), e._2))
                 println("Got " + l.size + " elements and dashboard is " + pr)
 	              get[html.Canvas](mainRef + "header").fold(
 	                errorMsg => println("Could not find canvas. Error is {}", errorMsg),
