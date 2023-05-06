@@ -1,18 +1,12 @@
 var staticScript = `site "Some App" with {
     add "Login" login show
-        background "https://picsum.photos/1980/1020"
-            script "https://api.scaleitusa.com/api/script/" key "scriptKey" with {
+        background "https://picsum.photos/1980/1020" with {
             add "Login" text
             add "Password" password
-            add "Login" button with {
-                transition "Scaleit iW8 main 0.8.47" with {
-                    query post "https://api.scaleitusa.com/api/login" inputs {
-                        "username" using "Login"
-                        "password" using "Password"
-                    }
-                } 
+            add "Login (just click me)" button with {
+                transition "app demo main"
             }
-            add "Scaleit iW8" footer
+            add "Here's a footer" footer
         }
     add "Dashboard" dashboard
         header "Tickets" {
@@ -454,7 +448,7 @@ var staticScript = `site "Some App" with {
             }
         }
     }
-    add "Scaleit iW8 main 0.8.47" main color "orange" with {
+    add "app demo main" main color "orange" with {
     add "username" display
         add "dateswindow" datetimedialog buttons {
             add "Day" 1
