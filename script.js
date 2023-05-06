@@ -10,7 +10,7 @@ var staticScript = `site "Some App" with {
         }
     add "Dashboard" dashboard
         header "Tickets" {
-            query "https://api.scaleitusa.com/api/scaleit/v2/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 rest "tickets/summary"
                 param "session="
@@ -29,7 +29,7 @@ var staticScript = `site "Some App" with {
                 "Daily" 1
             }
             use {
-                query "https://api.scaleitusa.com/api/scaleit/v2/" use {
+                query "http://127.0.0.1/mockup" use {
                     rest "locationID"
                     rest "tickets/summary"
                     param "session="
@@ -47,7 +47,7 @@ var staticScript = `site "Some App" with {
                 "Daily" 1
             }
             use {
-                query "https://api.scaleitusa.com/api/scaleit/v2/" use {
+                query "http://127.0.0.1/mockup" use {
                     rest "locationID"
                     rest "tickets/summary"
                     param "session="
@@ -67,7 +67,7 @@ var staticScript = `site "Some App" with {
                 "Daily" 1
             }
             use {
-                query "https://api.scaleitusa.com/api/scaleit/v2/" use {
+                query "http://127.0.0.1/mockup" use {
                     rest "locationID"
                     rest "tickets/summary"
                     param "session="
@@ -87,7 +87,7 @@ var staticScript = `site "Some App" with {
         message "This summarizes the products"
         footer "Products"
         table display {
-        query "https://api.scaleitusa.com/api/scaleit/v1/products/" use {
+        query "http://127.0.0.1/mockup" use {
             rest "locationID"
             param "session="
             param "sessionKey"
@@ -127,7 +127,7 @@ var staticScript = `site "Some App" with {
         message "This summarizes the trucks"
         footer "Trucks"
         table display {
-        query "https://api.scaleitusa.com/api/scaleit/v1/vehicles/" use {
+        query "http://127.0.0.1/mockup" use {
             rest "locationID"
             param "session="
             param "sessionKey"
@@ -140,7 +140,7 @@ var staticScript = `site "Some App" with {
             edit with delete
                 "regNo" is "RegNo"
                 "name" is "Name"
-                "ownerId" is "Owner" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
+                "ownerId" is "Owner" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"
@@ -153,7 +153,7 @@ var staticScript = `site "Some App" with {
             add
                 "regNo" is "RegNo" required
                 "name" is "Name"   
-                "ownerId" is "Owner" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
+                "ownerId" is "Owner" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"
@@ -166,7 +166,7 @@ var staticScript = `site "Some App" with {
         message "This summarizes the accounts"
         footer "Accounts"
         table display {
-        query "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
+        query "http://127.0.0.1/mockup" use {
             rest "locationID"
             param "session="
             param "sessionKey"
@@ -183,7 +183,7 @@ var staticScript = `site "Some App" with {
                 "taxExempt" is "Tax Exempt" type Boolean
                 "printPrice" is "Print Price" type Boolean
                 "remarks" is "Remarks"
-                "priceListId" is "Price List" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/pricelist/" use {
+                "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"
@@ -199,7 +199,7 @@ var staticScript = `site "Some App" with {
                 "taxExempt" is "Tax Exempt" type Boolean
                 "printPrice" is "Print Price" type Boolean
                 "remarks" is "Remarks"
-                "priceListId" is "Price List" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/pricelist/" use {
+                "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                    rest "locationID"
                    param "session="
                     param "sessionKey"
@@ -212,7 +212,7 @@ var staticScript = `site "Some App" with {
         message "Lists users available for W8"
         footer "W8 Users"
         table 10 display {
-            query "https://api.scaleitusa.com/api/scaleit/v1/users/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -225,7 +225,7 @@ var staticScript = `site "Some App" with {
                     "name" is "Name" required
                     "password" is "Password" required
                     "email" is "Email"
-                    "profileId" is "Profile" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/userprofiles/" use { 
+                    "profileId" is "Profile" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use { 
                         rest "locationID"
                         param "session="
                         param "sessionKey"
@@ -238,7 +238,7 @@ var staticScript = `site "Some App" with {
         message "This summarizes the projects"
         footer "Projects"
         table display {
-            query "https://api.scaleitusa.com/api/scaleit/v1/projects/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -257,22 +257,22 @@ var staticScript = `site "Some App" with {
                     "code" is "Job Number" 
                     "orderedQuantity" is "Ordered" type Number format "%5.2f" required
                     "taxExempt" is "Tax Exempt" type Boolean
-                    "productId" is "Product" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/products/" use {
+                    "productId" is "Product" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }                    
-                    "clientId" is "Customer" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
+                    "clientId" is "Customer" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }					
-                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/pricelist/" use {
+                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }
-                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/projecttypes/" use {
+                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
@@ -287,22 +287,22 @@ var staticScript = `site "Some App" with {
                     "code" is "Job Number" 
                     "orderedQuantity" is "Ordered" type Number format "%5.2f" required
                     "taxExempt" is "Tax Exempt" type Boolean
-                    "productId" is "Product" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/products/" use {
+                    "productId" is "Product" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }                        
-                    "clientId" is "Customer" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
+                    "clientId" is "Customer" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }
-                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/pricelist/" use {
+                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
                     }
-                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "https://api.scaleitusa.com/api/scaleit/v1/projecttypes/" use {
+                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
                         rest "locationID"
                         param "session="
                         param "sessionKey"
@@ -315,7 +315,7 @@ var staticScript = `site "Some App" with {
         message "This summarizes the tickets for this week"
         footer "Weekly tickets"
         table 1 display {
-            query "https://api.scaleitusa.com/api/scaleit/v1/tickets/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -337,7 +337,7 @@ var staticScript = `site "Some App" with {
         message "Price List"
         footer "Price List"
         table display {
-            query "https://api.scaleitusa.com/api/scaleit/v1/pricelist/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -349,7 +349,7 @@ var staticScript = `site "Some App" with {
                 edit
                     "name" is "Name"
                     "priceListDetails" is "Price List Details" multi {
-                        "productId" is "Product" format "name" is "id" dropdown "https://api.scaleitusa.com/api/scaleit/v1/products/" use {
+                        "productId" is "Product" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
                             rest "locationID"
                             param "session="
                             param "sessionKey"
@@ -368,7 +368,7 @@ var staticScript = `site "Some App" with {
             message "This summarizes the grouped tickets for this week"
             footer "Weekly grouped tickets"
             report 1 {
-            query "https://api.scaleitusa.com/api/scaleit/v1/reports/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "session="
                 param "sessionKey"
@@ -393,7 +393,7 @@ var staticScript = `site "Some App" with {
             message "This summarizes the grouped tickets by customer"
             footer "Weekly grouped tickets by customer"
             report 1 {
-            query "https://api.scaleitusa.com/api/scaleit/v1/reports/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "grouping=clients"
                 param "session="
@@ -420,7 +420,7 @@ var staticScript = `site "Some App" with {
             message "This summarizes the grouped tickets by product"
             footer "Grouped tickets by product"
             report 1 {
-            query "https://api.scaleitusa.com/api/scaleit/v1/reports/" use {
+            query "http://127.0.0.1/mockup" use {
                 rest "locationID"
                 param "grouping=products"
                 param "session="
