@@ -1,153 +1,462 @@
-var staticScript = `site "ScaleIt mW8" mobile dark with {
-       add "Login" login show
-           background "https://picsum.photos/1980/1020"
-               with {
-               add "Login" text
-               add "Password" password
-	       add "Remember me" remember
-               add "Login" button with {
-                   transition "ScaleIt mW8 main" with {
-                       query post "https://api.scaleitusa.com/api/auth" inputs {
-                           "username" using "Login"
-                           "password" using "Password"
-                       }
-                   }
-               }
-           }
-       add "Scales"
-			title "Scales"
-			message "This summarizes the scales"
-			table display {
-				query "https://api.scaleitusa.com/api/" use {
-					rest "companyID"
-					rest "scales"
-               		param "locationId="
-					param "locationID"
-					param "session="
-					param "sessionKey"
-				} with {
-               		column "name" as "Name"
-					column "weight" as "Weight"
-					column "unit" as "Unit"
-					column "scaleId" as "ScaleId"
-				}
-			}
-			panel "Weight" {
-				query "https://api.scaleitusa.com/api/" use {
-						rest "companyID"
-						rest "scales"
-						param "locationId="
-						param "locationID"
-						param "session="
-						param "sessionKey"
-				} with {
-						column "name" as "Name"
-						column "weight" as "Weight"
-						column "unit" as "Unit"
-						value "weight" as "S2Weight"
-						value "lastContact" as "S2DateTime"
-				   }
-			   }
-			panel "Truck" {
-				query "https://api.scaleitusa.com/api/scaleit/v1/vehicles/" use {
-						rest "locationID"
-						param "session="
-						param "sessionKey"
-				} with {
-						column "id" as "Truck ID"
-						column "name" as "Truck Name"
-						column "regNo" as "RegNo"
-						value "regNo" as "vehicleRegNo"
-						value "vehicleWeights(0).tareWeight" as "S1Weight"
-						value "vehicleWeights(0).tareDate" format "YYYY-MM-DD HH:mm:ss" as "S1DateTime"
-			   }
-		   }
-			panel "Client" {
-				query "https://api.scaleitusa.com/api/scaleit/v1/clients/" use {
-						rest "locationID"
-						param "session="
-						param "sessionKey"
-				} with {
-						column "id" as "Account ID"
-						column  "name" as "Client Name"
-						value "name" as "clients"
-						value "id" as "clientId"
-				}
-		   }
-			panel "Project" {
-			query "https://api.scaleitusa.com/api/scaleit/v1/projects/" use {
-						rest "locationID"
-						param "session="
-						param "sessionKey"
-				} with {
-						column "id" as "Project ID"
-						column  "name" as "Project Name"
-						column "client_name" as "Client"
-						value "id" as "projectId"
-				}
-		   }
-			panel "Material" {
-				query "https://api.scaleitusa.com/api/scaleit/v1/products/" use {
-					rest "locationID"
-					param "session="
-					param "sessionKey"
-				} with {
-					column "id" as "Product ID"
-					column "name" as "Product Name"
-					column "unitPrice" as "Unit Price" format "$ %5.2f"
-					value "id" as "productId"
-				}
-		   }
-		   panel "Signature" signature "Provide signature" as "signature"
-		   panel "Camera" camera "Provide camera" as "orderLineMedia"
-			go "Tickets" with {
-				query post body "https://api.scaleitusa.com/api/scaleit/v1/tickets/" use {
-						   rest "locationID"
-						   rest "mobile"
-						   param "session="
-							param "sessionKey"
-				   } with {
-						
-				   }
-			}
-       add "Tickets"
-           title "Tickets"
-           message "This summarizes the tickets"
-           table display {
-               query "https://api.scaleitusa.com/api/scaleit/v1/tickets/" use {
+var staticScript = `site "Some App" with {
+    add "Login" login show
+        background "https://picsum.photos/1980/1020" with {
+            add "Login" text
+            add "Password" password
+            add "Just click me" button with {
+                transition "app demo main"
+            }
+            add "Here's a footer" footer
+        }
+    add "Dashboard" dashboard
+        header "Tickets" {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                rest "tickets/summary"
+                param "session="
+                param "sessionKey"
+                param "gqlQuery={tickets: dataQuery {recordCreated}}"
+                param "gqlDataOnly=true"
+                param "departmentId="
+                param "departmentID"
+            }
+        }
+        widgets {
+            add "Tickets" doughnut "Number"
+            days {
+                "Monthly" 30
+                "Weekly" 7
+                "Daily" 1
+            }
+            use {
+                query "http://127.0.0.1/mockup" use {
+                    rest "locationID"
+                    rest "tickets/summary"
+                    param "session="
+                    param "sessionKey"
+                    param "gqlQuery={tickets: dataQuery {recordCreated}}"
+                    param "gqlDataOnly=true"
+                    param "departmentId="
+                    param "departmentID"
+                }
+            }
+            add "Tickets" doughnut "Amount"
+            days {
+                "Monthly" 30
+                "Weekly" 7
+                "Daily" 1
+            }
+            use {
+                query "http://127.0.0.1/mockup" use {
+                    rest "locationID"
+                    rest "tickets/summary"
+                    param "session="
+                    param "sessionKey"
+                    param "gqlQuery={tickets: dataQuery {recordCreated netPrice}}"
+                    param "gqlDataOnly=true"
+                    param "departmentId="
+                    param "departmentID"
+                } with {
+                    column "netPrice" as "Price"
+                }
+            }
+            add "Tickets" doughnut "Tonnage"
+            days {
+                "Monthly" 30
+                "Weekly" 7
+                "Daily" 1
+            }
+            use {
+                query "http://127.0.0.1/mockup" use {
+                    rest "locationID"
+                    rest "tickets/summary"
+                    param "session="
+                    param "sessionKey"
+                    param "gqlQuery={tickets: dataQuery {recordCreated  netWeight}}"
+                    param "gqlDataOnly=true"
+                    param "departmentId="
+                    param "departmentID"
+                } with {
+                    column "netWeight" / 2000 as "Weight"
+                }
+            }
+        }
+            
+    add "Products"
+        title "Products"
+        message "This summarizes the products"
+        footer "Products"
+        table display {
+        query "http://127.0.0.1/mockup" use {
+            rest "locationID"
+            param "session="
+            param "sessionKey"
+        } with {
+            column "id" as "Product ID"
+            column  "name" as "Product Name"
+            column "unitPrice" as "Unit Price" format "$ %5.2f"
+            column "unitName" as "Unit"
+            column "productGroupId" as "Product Type" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+            }
+            add
+                "name" is "Name" required
+                "unitPrice" is "Unit Price" format "$ %5.2f"
+                "unitId" is "Unit" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
                    rest "locationID"
-				   param "session="
-					param "sessionKey"
-               } with {
-                   column "ticketNumber" as "Ticket #"
-                   column "clientName" as "Client"
-                   column "ticketDetails(0).netWeight" as "Weight"
-                   column "ticketDetails(0).weightUnit" as "Unit"
-               }
-           }
-	    panel "Ticket" {
-           	"netWeight" is "Weigh"
-           }
-	add "About"
-           title "About"
-           lines {
-		"This is an application to do self weighing"
-		"Created by Berrye LLC for ScaleIt USA Inc."
-		"Copyright © 2020."
-	   }
-	    page
-       add "ScaleIt mW8 main" main color "blue" with {
-           add "username" display "Edit User" with {
-               query put "https://api.scaleitusa.com/api/users" inputs {
-                   "Username" using "username" hidden
-                   "Old Password" using "oldpassword" password
-                   "New Password" using "newpassword" password
-               }
-           }
-           add "Company,companies,companyID,companyName,locations,locationID,locationName" menu with {
-               transition "Scales"
-           }
-           add "ScaleIt mW8 0.8.1" footer
-           add "Scales" load
-       }
-   }`;
+                   param "session="
+                    param "sessionKey"
+                }
+            as "Add"
+            edit with delete
+                "name" is "Name" required
+                "unitPrice" is "Unit Price" format "$ %5.2f"
+                "unitId" is "Unit" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
+                   rest "locationID"
+                   param "session="
+                    param "sessionKey"
+                }
+            
+            as "Edit"
+        }
+    }
+    add "Trucks"
+        title "Trucks"
+        message "This summarizes the trucks"
+        footer "Trucks"
+        table display {
+        query "http://127.0.0.1/mockup" use {
+            rest "locationID"
+            param "session="
+            param "sessionKey"
+        } with {
+            column "id" as "Truck ID"
+            column  "name" as "Truck Name"
+            column "ownerName" as "Owner"
+            column "regNo" as "RegNo"
+            column "vehicleWeights(0).tareWeight" as "Tare" format "%5.2f lb"
+            edit with delete
+                "regNo" is "RegNo"
+                "name" is "Name"
+                "ownerId" is "Owner" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                   rest "locationID"
+                   param "session="
+                    param "sessionKey"
+                }      
+                "vehicleWeights" is "Vehicle Weights" multi {
+                    "remarks" is "Name" required
+                    "tareWeight" is "Weight" type Number format "%5.2f" required
+            }                                               
+            as "Edit"
+            add
+                "regNo" is "RegNo" required
+                "name" is "Name"   
+                "ownerId" is "Owner" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                   rest "locationID"
+                   param "session="
+                    param "sessionKey"
+                }                                                           
+            as "Add"              
+        }
+    }
+    add "Accounts"
+        title "Accounts"
+        message "This summarizes the accounts"
+        footer "Accounts"
+        table display {
+        query "http://127.0.0.1/mockup" use {
+            rest "locationID"
+            param "session="
+            param "sessionKey"
+        } with {
+            column "id" as "Account ID"
+            column  "name" as "Client Name"
+            edit with delete
+                "name" is "Name"
+                "address1" is "Address 1"
+                "address2" is "Address 2"
+                "postOffice" is "City"
+                "state" is "State"
+                "postCodeText" is "Zip Code"
+                "taxExempt" is "Tax Exempt" type Boolean
+                "printPrice" is "Print Price" type Boolean
+                "remarks" is "Remarks"
+                "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                   rest "locationID"
+                   param "session="
+                    param "sessionKey"
+                }                      
+            as "Edit"
+            add
+                "name" is "Name"
+                "address1" is "Address 1"
+                "address2" is "Address 2"
+                "postOffice" is "City"
+                "state" is "State"
+                "postCodeText" is "Zip Code"
+                "taxExempt" is "Tax Exempt" type Boolean
+                "printPrice" is "Print Price" type Boolean
+                "remarks" is "Remarks"
+                "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                   rest "locationID"
+                   param "session="
+                    param "sessionKey"
+                }                      
+            as "Add"
+        }
+    }
+    add "W8 Users"
+        title "W8 Users"
+        message "Lists users available for W8"
+        footer "W8 Users"
+        table 10 display {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+            } with {
+                column "id" as "User Id"
+                column "recordCreated" as "Created Date"
+                column "name" as "User Name"
+                
+                add
+                    "name" is "Name" required
+                    "password" is "Password" required
+                    "email" is "Email"
+                    "profileId" is "Profile" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use { 
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }
+                as "Add"
+            }
+        }
+    add "Projects"
+        title "Projects"
+        message "This summarizes the projects"
+        footer "Projects"
+        table display {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+            } with {
+                column "id" as "Project ID"
+                column  "name" as "Project Name"
+                column "client_name" as "Client"
+                column "product_name" as "Product"
+                column "taxExempt" as "Tax Exempt" format "Boolean"
+                add
+                    "name" is "Name" required                    
+                    "address1" is "Address" 
+                    "postOffice" is "City" 
+                    "state" is "State" 
+                    "address2" is "PO Number" 
+                    "code" is "Job Number" 
+                    "orderedQuantity" is "Ordered" type Number format "%5.2f" required
+                    "taxExempt" is "Tax Exempt" type Boolean
+                    "productId" is "Product" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }                    
+                    "clientId" is "Customer" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }					
+                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }
+                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }				
+                as "Add a new Project"
+                edit with delete
+                    "name" is "Name" required                    
+                    "address1" is "Address" 
+                    "postOffice" is "City" 
+                    "state" is "State" 
+                    "address2" is "PO Number" 
+                    "code" is "Job Number" 
+                    "orderedQuantity" is "Ordered" type Number format "%5.2f" required
+                    "taxExempt" is "Tax Exempt" type Boolean
+                    "productId" is "Product" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }                        
+                    "clientId" is "Customer" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }
+                    "priceListId" is "Price List" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }
+                    "projectTypeId" is "Type" format "name" is "id" dropdown withblank "http://127.0.0.1/mockup" use {
+                        rest "locationID"
+                        param "session="
+                        param "sessionKey"
+                    }			
+                as "Edit"
+            }
+        }
+    add "Tickets"
+        title "Tickets for the last week"
+        message "This summarizes the tickets for this week"
+        footer "Weekly tickets"
+        table 1 display {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+                param "departmentId="
+                param "departmentID"
+            } with {
+                column "depRunningNo" as "Number"
+                column "finished" as "Finished" format "MM-DD-YYYY h:mm a"
+                column "clientName" as "Client Name"
+                column "licensePlate" as "Vehicle RegNo"
+                column "notes" as "Driver"
+                column "projectName" as "Project"
+                column "ticketDetails(0).netWeight" / 2000 as "Net Weight (tons)"
+                media "fileName" as "Ticket"
+            }
+        }
+    add "Price Lists"
+        title "Price List"
+        message "Price List"
+        footer "Price List"
+        table display {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+                param "departmentId="
+                param "departmentID"
+            } with {
+                column "id" as "ID"
+                column  "name" as "Name"
+                edit
+                    "name" is "Name"
+                    "priceListDetails" is "Price List Details" multi {
+                        "productId" is "Product" format "name" is "id" dropdown "http://127.0.0.1/mockup" use {
+                            rest "locationID"
+                            param "session="
+                            param "sessionKey"
+                        }
+                        "value" is "Value" type Number format "$ %5.2f"
+                }                    
+                as "Edit"
+                add
+                    "name" is "Name" required
+                as "Add"               
+            }
+        }
+    add "Reports" menu entries {
+        add "Grouped Tickets"
+            title "Grouped Tickets for the last week"
+            message "This summarizes the grouped tickets for this week"
+            footer "Weekly grouped tickets"
+            report 1 {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "session="
+                param "sessionKey"
+                param "departmentId="
+                param "departmentID"
+            } with {
+                column "totalTicketCount" as "Total tickets"
+                column "totalWeight" / 2000 as "Total Weight" format "%8.2f"
+                column "tickets.ticketNumber" as "Ticket Nbr."
+                column "tickets.finished" as "Finished" format "MM-DD-YYYY h:mm a"
+                column "tickets.clientName" as "Client Name"
+                column "tickets.licensePlate" as "Vehicle RegNo"
+                column "tickets.driverName" as "Driver Name"
+                column "tickets.projectName" as "Project"
+                column "tickets.productName" as "Product"
+                column "tickets.ticketWeight" / 2000  as "Weight" format "%d"
+                media "fileName" as "Ticket"
+            }
+        }
+        add "Grouped Tickets by Customer"
+            title "Grouped Tickets by Customer"
+            message "This summarizes the grouped tickets by customer"
+            footer "Weekly grouped tickets by customer"
+            report 1 {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "grouping=clients"
+                param "session="
+                param "sessionKey"
+                param "departmentId="
+                param "departmentID"
+            } with {
+                column "totalTicketCount" as "Total tickets"
+                column "totalWeight" / 2000 as "Total Weight" format "%8.2f"
+                column "clients.clientName" as "Client Name"
+                column "clients.clientTicketCount" as "Total tickets"
+                column "clients.clientTotalWeight" / 2000 as "Total Weight" format "%d"
+                column "clients.tickets.ticketNumber" as "Ticket Nbr."
+                column "clients.tickets.finished" as "Finished" format "MM-DD-YYYY h:mm a"
+                column "clients.tickets.licensePlate" as "Vehicle RegNo"
+                column "clients.tickets.driverName" as "Driver Name"
+                column "clients.tickets.projectName" as "Project"
+                column "clients.tickets.ticketWeight" / 2000  as "Weight" format "%d"
+                media "fileName" as "Ticket"
+            }
+        }
+        add "Grouped Tickets by Product"
+            title "Grouped Tickets by Product"
+            message "This summarizes the grouped tickets by product"
+            footer "Grouped tickets by product"
+            report 1 {
+            query "http://127.0.0.1/mockup" use {
+                rest "locationID"
+                param "grouping=products"
+                param "session="
+                param "sessionKey"
+                param "departmentId="
+                param "departmentID"
+            } with {
+                column "totalTicketCount" as "Total tickets"
+                column "totalWeight"  as "Total Weight" format "%5.0f"
+                column "totalPrice" as "Total Price" format "$ %5.2f"
+                column "totalPriceWithTax" as "Total Price with Tax" format "$ %5.2f"
+                column "products.productName" as "Product Name"
+                column "products.productTicketCount" as "Total tickets"
+                column "products.productTotalWeight"  as "Total Weight" format "%5.0f"
+                column "products.productTotalPrice" as "Total Price" format "$ %5.2f"
+                column "products.productTotalPriceWithTax" as "Total Price with Tax" format "$ %5.2f"
+                column "products.totalPriceWithTax" as "Total Price with Tax" format "$ %5.2f"
+                column "products.tickets.ticketNumber" as "Ticket Nbr."
+                column "products.tickets.finished" as "Finished" format "MMMM Do YYYY, h:mm a"
+                column "products.tickets.clientName" as "Client"
+                column "products.tickets.projectName" as "Project"
+                column "products.tickets.ticketWeight"  as "Weight" format "%5.0f"
+                column "products.tickets.ticketPrice" as "Price" format "$ %5.2f"
+                column "products.tickets.ticketPriceWithTax" as "Price with Tax" format "$ %5.2f"
+            }
+        }
+    }
+    add "app demo main" main color "orange" with {
+        add "somemockup" display
+        add "dateswindow" datetimedialog buttons {
+            add "Day" 1
+            add "Week" 7
+            add "Month" 30
+            add "Year" 365
+        }
+        add "Some app footer" footer
+        add "Dashboard" load
+    }
+}`;
