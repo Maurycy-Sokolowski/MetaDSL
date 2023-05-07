@@ -115,7 +115,7 @@ object WebParser extends JavaTokenParsers with Positional {
       `type` = typeQuery,
       timeout = 300000
     ).asInstanceOf[JQueryAjaxSettings])
-  } else println("using mockup data")
+  } else proc(Seq(1 to 10).toJSArray)
 
   def dialog(idd: String, title: String, msg: String, large: Boolean = false) = if (idd.notPresent) g.document.body.appendChild(div(cls := "modal fade modal-mini modal-primary", id := idd, tabindex := "-1", role := "dialog", attr("aria-labelledby") := title, attr("aria-hidden") := "true",
     div(
