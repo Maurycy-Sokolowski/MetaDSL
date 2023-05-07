@@ -85,7 +85,10 @@ object WebParser extends JavaTokenParsers with Positional {
     if (useBody && split > 0) (queryStr.take(split), queryStr.drop(split + factor)) else (queryStr, "")
   }
 
-  def queryServer(queryStr: String, proc: (js.Any) => Unit, typeQuery: String = "GET", useBody: Boolean = false) = if (!queryStr.contains("mockup")) {
+  def queryServer(queryStr: String, proc: (js.Any) => Unit, typeQuery: String = "GET", useBody: Boolean = false) = if (queryStr.contains("mockup")) {
+	  println("Using mockup data for a call")
+	  proc(Seq(1 to 10).toJSArray)
+  } else {
     var pidx = 0
     def progress(idd: String) = if (!"navigationprogress".notPresent && idd.notPresent) jQuery("#navigationprogress").append(div(id := idd,
         div(cls := "spinner-grow", style := js.Dictionary("width" -> "8rem", "height" -> "8rem"), role := "status")).render)
@@ -115,7 +118,7 @@ object WebParser extends JavaTokenParsers with Positional {
       `type` = typeQuery,
       timeout = 300000
     ).asInstanceOf[JQueryAjaxSettings])
-  } else proc(Seq(1 to 10).toJSArray)
+  }
 
   def dialog(idd: String, title: String, msg: String, large: Boolean = false) = if (idd.notPresent) g.document.body.appendChild(div(cls := "modal fade modal-mini modal-primary", id := idd, tabindex := "-1", role := "dialog", attr("aria-labelledby") := title, attr("aria-hidden") := "true",
     div(
@@ -224,12 +227,17 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           pages += s -> (() => {
             searchablePanel = None
             if (header.isDefined) {
+				println("Dashboard: " + header.get.query.url + ", " + header.get.query.url.contains("mockup"))
                 queryServer(queryFormat(header.get.query, "days=365"), (data: js.Any) => {
                     val l = data.asInstanceOf[js.Array[js.Dynamic]].toList
+					println("Data is " + l.mkString(","))
                     val mth = Map(0 -> "JAN", 1 -> "FEB", 2 -> "MAR", 3 -> "APR", 4 -> "MAY", 5 -> "JUN", 6 -> "JUL", 7 -> "AUG", 8 -> "SEP", 9 -> "OCT", 10 ->"NOV", 11 -> "DEC")
                     val cm = Moment().month().asInstanceOf[Int]
                     def hier(i: Int, f: Int) = if (i < f) i else i - 12
-                    val pr = l.foldLeft(Map[Int, Int]())((m, v) => {
+                    val pr = l.foldLeft(Map[Int, Int]())((m, v) => if (header.get.query.url.contains("mockup")) {
+						println("Dashboard mockup data")
+						Map(0 -> 8, 1 -> 3, 2 -> 6, 3 -> 2, 4 -> 3, 5 -> 6, 6 -> 2, 7 -> 3, 8 -> 6, 9 -> 2, 10 -> 3, 11 -> 6)
+					} else {
                         val dt = Try(Moment(v.extractV(header.get.timeField.get).asInstanceOf[Int])).getOrElse(Moment(v.recordCreated.asInstanceOf[String])).month().asInstanceOf[Int]
                         mergeIntSum(m, Map(dt -> 1))
 					}).toSeq.sortWith((v1, v2) => hier(v1._1,cm) < hier(v2._1, cm)).map(e => (mth(e._1), e._2))
@@ -410,7 +418,10 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             Try(permUpdaters += e.name.asId -> (() => click(e.id.get.asId)))
             Try(permUpdaters += elems.get.filter(e => e.typ.equals("display"))(0).id.get.asInstanceOf[String].asId + "save" -> (() => {
               val obj = js.Dynamic.literal( // tbd
-                username = currentContext.get.response.extractV(e.name).asInstanceOf[String],
+                username = if (!e.query.get.url.contains("mockup")) {
+					println("we use a mockup user")
+					"mockup"
+				} else currentContext.get.response.extractV(e.name).asInstanceOf[String],
                 oldpassword = jQuery("#" + elems.get.filter(e => e.typ.equals("display"))(0).id.get.asInstanceOf[String].asId + "oldpasswordin").value,
                 newpassword = jQuery("#" + elems.get.filter(e => e.typ.equals("display"))(0).id.get.asInstanceOf[String].asId + "newpasswordin").value
               )
@@ -449,15 +460,15 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             jQuery("#dateto").datetimepicker("keepOpen", true)
           }
           def isOne = {
-	          def one(elem: js.Dynamic, array: List[String]): Boolean = array match {
-					    case ar :: idd :: name :: rest => {
-                val ll = elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList
-			          if (array.size > 3 && ll.length < 2) one(ll(0), rest) else ll.length < 2
-					    }
-	          	case _ => false
-	          }
-	          val params = menus._1.split(",").toList
-		        one(currentContext.get.response, params.drop(1))
+	        def one(elem: js.Dynamic, array: List[String]): Boolean = array match {
+					case ar :: idd :: name :: rest => {
+						val ll = elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList
+						if (array.size > 3 && ll.length < 2) one(ll(0), rest) else ll.length < 2
+					}
+					case _ => false
+	        }
+	        val params = menus._1.split(",").toList
+		    one(currentContext.get.response, params.drop(1))
           }
            def createMobileMenu = {
             var idx = 0
@@ -476,28 +487,29 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           def createMenu = {
             var idx = 0
 	          def menu(title: String, titleacc: List[String], elem: js.Dynamic, array: List[String]): JsDom.TypedTag[html.LI] = array match {
-					    case ar :: idd :: name :: rest => {
-					    	val ref = "menuentry" + idx
-                idx = idx + 1
-					    	li(
-		              a(attr("data-toggle") := "collapse", href := "#" + ref,
-                    i(cls := "now-ui-icons business_globe"),
-                    p(title,
-                      b(cls := "caret"))),
-		              div(cls := "collapse", id := ref,
-		                ul(
-		                  cls := "nav",
-		                  for (e <- elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList) yield
-		                    if (array.size > 3) menu(e.extractV(name).asInstanceOf[String], titleacc ++ List(name) ++ List(e.extractV(name).asInstanceOf[String]), e, rest) else li(
-		                      a(
-		                        href := "#selection_" + idd + "_" + e.extractV(idd).asInstanceOf[String],
-		                        attr("data-info") := (titleacc ++ List(name) ++ List(e.extractV(name).asInstanceOf[String]) ++ List(Try(e.extractV("mediaPath").asInstanceOf[String]).getOrElse(extractMapOrUser("mediaPath")))).mkString("_"),
-		                        span(cls := "sidebar-mini-icon", e.extractV(idd).asInstanceOf[String]),
-		                        span(cls := "sidebar-normal", e.extractV(name).asInstanceOf[String]))))))
-					    }
-	          	case _ => li()
-	          }
-	          val params = menus._1.split(",").toList
+					case ar :: idd :: name :: rest => {
+					    val ref = "menuentry" + idx
+                		idx = idx + 1
+					    li(
+		              		a(attr("data-toggle") := "collapse", href := "#" + ref,
+                    		i(cls := "now-ui-icons business_globe"),
+                    		p(title,
+                      			b(cls := "caret"))),
+		              			div(cls := "collapse", id := ref,
+		                		ul(
+		                  			cls := "nav",
+		                  				for (e <- elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList) yield
+		                    				if (array.size > 3) menu(e.extractV(name).asInstanceOf[String], titleacc ++ List(name) ++ List(e.extractV(name).asInstanceOf[String]), e, rest) else li(
+		                      					a(
+													href := "#selection_" + idd + "_" + e.extractV(idd).asInstanceOf[String],
+													attr("data-info") := (titleacc ++ List(name) ++ List(e.extractV(name).asInstanceOf[String]) ++ List(Try(e.extractV("mediaPath").asInstanceOf[String]).getOrElse(extractMapOrUser("mediaPath")))).mkString("_"),
+													span(cls := "sidebar-mini-icon", e.extractV(idd).asInstanceOf[String]),
+													span(cls := "sidebar-normal", e.extractV(name).asInstanceOf[String]))))))
+					}
+	          		case _ => li()
+	          	}
+	          	val params = menus._1.split(",").toList
+				val respp = Try(currentContext.get.response.asInstanceOf[List[String]]).getOrElse(List("One","Two","Three"))
 		        menu(params(0), List(), currentContext.get.response, params.drop(1))
           }
           pages += s -> (() => {
@@ -538,7 +550,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
               div(cls := "sidebar", attr("data-color") := Try(mainColor.get).getOrElse("blue"),
                 div(
                   cls := "logo",
-                  a(href := "#" + elems.get.filter(e => e.typ.equals("display"))(0).name.asId, cls := "simple-text logo-normal", currentContext.get.response.extractV(elems.get.filter(e => e.typ.equals("display"))(0).name).asInstanceOf[String])),
+                  a(href := "#" + elems.get.filter(e => e.typ.equals("display"))(0).name.asId, cls := "simple-text logo-normal", Try(currentContext.get.response.extractV(elems.get.filter(e => e.typ.equals("display"))(0).name)).getOrElse("Some User").asInstanceOf[String])),
                   for (aa <- menus._1.split(",").drop(1).grouped(3).toList) yield {
                     val cc = Try(currentContext.get.response.extractV(aa(2)).asInstanceOf[String]).getOrElse("")
                     div(
@@ -1732,7 +1744,10 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       val req = mm.toJSDictionary.asInstanceOf[js.Dynamic]
       println("clicked " + t + " with " + stringify(req))
       val mainUrl = t.tr.url.get.url + (if (t.tr.url.get.url.contains("?") || t.tr.url.get.typ.toLowerCase.equals("get")) encodeURI(stringify(req)) else "")
-      jQuery.ajax(js.Dynamic.literal(
+      if (t.tr.url.get.url.contains("mockup")) {
+		  println("We are using a mockup transition")
+		  replacePanel(t.tr.name)
+	  } else jQuery.ajax(js.Dynamic.literal(
           url = t.tr.url.get.url + (if (t.tr.url.get.url.contains("?") || t.tr.url.get.typ.toLowerCase.equals("get")) encodeURI(stringify(req)) else ""),
           data = if (t.tr.url.get.typ.toLowerCase.equals("post")) stringify(req) else "",
           contentType = "application/json",

@@ -3,7 +3,7 @@ var staticScript = `site "Some App" with {
         background "https://picsum.photos/1980/1020" with {
             add "Login" text
             add "Password" password
-            add "Login (just click me)" button with {
+            add "Just click me" button with {
                 transition "app demo main"
             }
             add "Here's a footer" footer
@@ -449,17 +449,14 @@ var staticScript = `site "Some App" with {
         }
     }
     add "app demo main" main color "orange" with {
-    add "username" display
+        add "somemockup" display
         add "dateswindow" datetimedialog buttons {
             add "Day" 1
             add "Week" 7
             add "Month" 30
             add "Year" 365
         }
-        add "Company,companies,companyID,companyName,locations,locationID,locationName,departments,departmentID,name" menu with {
-            transition	 "Dashboard"
-        }
-        add "Scaleit iW8" footer
+        add "Some app footer" footer
         add "Dashboard" load
     }
 }`;
