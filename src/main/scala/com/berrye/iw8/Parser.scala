@@ -85,7 +85,7 @@ object WebParser extends JavaTokenParsers with Positional {
     if (useBody && split > 0) (queryStr.take(split), queryStr.drop(split + factor)) else (queryStr, "")
   }
 
-  def queryServer(queryStr: String, proc: (js.Any) => Unit, typeQuery: String = "GET", useBody: Boolean = false) = {
+  def queryServer(queryStr: String, proc: (js.Any) => Unit, typeQuery: String = "GET", useBody: Boolean = false) = if (!queryStr.contains("mockup")) {
     var pidx = 0
     def progress(idd: String) = if (!"navigationprogress".notPresent && idd.notPresent) jQuery("#navigationprogress").append(div(id := idd,
         div(cls := "spinner-grow", style := js.Dictionary("width" -> "8rem", "height" -> "8rem"), role := "status")).render)
@@ -115,7 +115,7 @@ object WebParser extends JavaTokenParsers with Positional {
       `type` = typeQuery,
       timeout = 300000
     ).asInstanceOf[JQueryAjaxSettings])
-  }
+  } else println("using mockup data")
 
   def dialog(idd: String, title: String, msg: String, large: Boolean = false) = if (idd.notPresent) g.document.body.appendChild(div(cls := "modal fade modal-mini modal-primary", id := idd, tabindex := "-1", role := "dialog", attr("aria-labelledby") := title, attr("aria-hidden") := "true",
     div(
@@ -150,7 +150,7 @@ object WebParser extends JavaTokenParsers with Positional {
 
   def extractMapOrUser(s: String) = if (selections.contains(s)) selections(s) else currentContext.get.response.extractV(s).asInstanceOf[String]
 
-	def queryFormat(v: Query, tail: String = "") = {
+  def queryFormat(v: Query, tail: String = "") = if (v.url.contains("mockup")) v.url else {
     val rests = Try(v.extras.get.filter(e => e.typ.equals("rest"))).getOrElse(List()).map(e => e.value.get)
     val restStr = rests.foldLeft(List[String]())((l, s) => l ++ List(Try(extractMapOrUser(s)).getOrElse(s))).mkString("/")
     val parms = Try(v.extras.get.filter(e => e.typ.equals("param"))).getOrElse(List()).map(e => Try(Some(e.value.get)).getOrElse(None)).flatten
@@ -213,7 +213,7 @@ object WebParser extends JavaTokenParsers with Positional {
     case l => StaticStruct(l)
   }
 
-	def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" ~> stringToken)?) ~ (("lines" ~> "{" ~> rep(stringToken) <~ "}")?) ~ (("footer" ~> stringToken)?) ~ ("dashboard" | "dasheader" | "login" | "main" | "menu" | "table" | "page") ~ (("items" ~> wholeNumber)?) ~ (wholeNumber?) ~ (header?) ~ ("show"?) ~ (("color" ~> stringToken)?) ~ (("background" ~> stringToken)?) ~ (("script" ~> scriptTok)?) ~ (("with" ~> "{" ~> rep(elements) <~ "}")?) ~ (("display" ~> "{" ~> query <~ "}")?) ~ (rep(panel)?) ~ (rep(go)?) ~ (("widgets" ~> "{" ~> rep(widgets) <~ "}")?) ~ (("entries" ~> "{" ~> rep(reports) <~ "}")?) ~ ((staticStruct)?) ^^ {
+def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" ~> stringToken)?) ~ (("lines" ~> "{" ~> rep(stringToken) <~ "}")?) ~ (("footer" ~> stringToken)?) ~ ("dashboard" | "dasheader" | "login" | "main" | "menu" | "table" | "page") ~ (("items" ~> wholeNumber)?) ~ (wholeNumber?) ~ (header?) ~ ("show"?) ~ (("color" ~> stringToken)?) ~ (("background" ~> stringToken)?) ~ (("script" ~> scriptTok)?) ~ (("with" ~> "{" ~> rep(elements) <~ "}")?) ~ (("display" ~> "{" ~> query <~ "}")?) ~ (rep(panel)?) ~ (rep(go)?) ~ (("widgets" ~> "{" ~> rep(widgets) <~ "}")?) ~ (("entries" ~> "{" ~> rep(reports) <~ "}")?) ~ ((staticStruct)?) ^^ {
     case s ~ title ~ message ~ lines ~ footer ~ t ~ itemsNum ~ days ~ header ~ sh ~ mainColor ~ back ~ scriptEl ~ elems ~ disp ~ pl ~ trans ~ widg ~ men ~ static => {
       println("adding " + s + ", " + t)
       val mainRef = s.asId + UUID.uuid.replaceAll("-","")
@@ -415,7 +415,7 @@ object WebParser extends JavaTokenParsers with Positional {
                 newpassword = jQuery("#" + elems.get.filter(e => e.typ.equals("display"))(0).id.get.asInstanceOf[String].asId + "newpasswordin").value
               )
               println("Saving " + stringify(obj))
-              jQuery.ajax(js.Dynamic.literal(
+              if (!e.query.get.url.contains("mockup")) jQuery.ajax(js.Dynamic.literal(
                 url = queryFormat(e.query.get, ""),
                 data = stringify(obj),
                 contentType = "application/json",
@@ -423,7 +423,7 @@ object WebParser extends JavaTokenParsers with Positional {
                 error = { (jqXHR: JQueryXHR, textStatus: js.Any, errorThrow: js.Any) => click(e.name.asId + "error")},
                 `type` = e.query.get.typ,
                 timeout = 300000
-              ).asInstanceOf[JQueryAjaxSettings])
+              ).asInstanceOf[JQueryAjaxSettings]) else println("using mockup data")
             }))
           }
           if ("editwindow".notPresent) g.document.body.appendChild(div(cls := "modal fade", id := "editwindow", tabindex := "-1", role := "dialog", attr("aria-labelledby") := "Edit Script", attr("aria-hidden") := "true",
@@ -801,7 +801,7 @@ object WebParser extends JavaTokenParsers with Positional {
       println("recognizing widget " + ws + " type " + tp + " title " + title + " days " + days)
       val mainRef = ws.asId + UUID.uuid.replaceAll("-","")
       def choices() = for (i <- days.get) yield button(id := mainRef + "_" + i.value, cls := "dropdown-item", i.title)
-      def fill(extra: List[Extra], queryStr: String, typ: String) = Try({
+      def fill(extra: List[Extra], queryStr: String, typ: String) = if (!queryStr.contains("mockup")) Try({
         setTimeout(1000) {
           jQuery.ajax(js.Dynamic.literal(
 					    url = queryFormat(Query(queryStr, false, typ, Some(extra), None, None), "limit=" + 10000),
@@ -816,7 +816,7 @@ object WebParser extends JavaTokenParsers with Positional {
 					    `type` = typ
 					).asInstanceOf[JQueryAjaxSettings])
         }
-      })
+      }) else println("using mockup data")
       tp match {
         case "customers" => () => {
           fill(q.get.extras.get, q.get.url, q.get.typ)
@@ -1263,7 +1263,7 @@ object WebParser extends JavaTokenParsers with Positional {
                       }
                       val o = mo.toJSDictionary.asInstanceOf[js.Dynamic]
                       println(stringify(o))
-                      jQuery.ajax(js.Dynamic.literal(
+                      if (!queryStr.contains("mockup")) jQuery.ajax(js.Dynamic.literal(
                         url = queryStr,
                         data = stringify(o),
                         contentType = "application/json",
@@ -1273,7 +1273,7 @@ object WebParser extends JavaTokenParsers with Positional {
                         } },
                         error = { (jqXHR: JQueryXHR, textStatus: js.Any, errorThrow: js.Any) => click("saveerror") },
                         `type` = "PUT"
-                      ).asInstanceOf[JQueryAjaxSettings])
+                      ).asInstanceOf[JQueryAjaxSettings]) else println("using mockup data")
                     })
                   }
                   div(cls := getClass(cn._2), id := idd,
