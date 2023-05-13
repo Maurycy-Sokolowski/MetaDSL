@@ -708,8 +708,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
    }
   }
 
-  case class ScriptCls(url: String, key: String)
-  def scriptTok = stringToken ~ ("key" ~> stringToken) ^^ {
+  case class ScriptCls(url: String, key: Option[String])
+  def scriptTok = stringToken ~ (("key" ~> stringToken)?) ^^ {
     case url ~ key => ScriptCls(url, key)
   }
 
@@ -1756,7 +1756,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             if (array.isSuccess && array.get.length > 0) {
               currentContext = Some(t.copy(response = array.get(0)))
               loadDropdowns(dropdownsLoad.values)
-              if (scriptVal.isDefined && !currentContext.get.response.extractV(scriptVal.get.key).asInstanceOf[String].isEmpty) queryServer(scriptVal.get.url + currentContext.get.response.extractV(scriptVal.get.key).asInstanceOf[String], (data: js.Any) => {
+              if (scriptVal.isDefined && (scriptVal.get.key.isEmpty || !currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String].isEmpty)) queryServer(scriptVal.get.url + (if (scriptVal.get.key.isEmpty) "" else currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String]), (data: js.Any) => {
                 val obj = data.asInstanceOf[js.Array[js.Dynamic]].toList.head
                 val str = obj.script.asInstanceOf[String]
                 val localScr = Try(store.getItem("script")).getOrElse("")
