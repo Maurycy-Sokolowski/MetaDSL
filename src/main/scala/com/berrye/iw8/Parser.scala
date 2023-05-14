@@ -361,6 +361,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             dialog("genericerror", "Error", "An error occured.")
           }
           scriptVal = scriptEl
+		  println("Script: " + scriptVal)
           pages += s -> (() => if (mobileSite) {
               val pp = if (store.getItem("rememberme") != null) Some(store.getItem("rememberme").split(",").map(e => (Try(e.split("=")(0)).getOrElse(""), Try(e.split("=")(1)).getOrElse(""))).toMap) else None
               println("Retrieved creds: " + pp)
@@ -1739,6 +1740,25 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       println("Previous: " + str)
       store.setItem("rememberme", str)
     } else store.removeItem("rememberme")
+	def doTransition = if (scriptVal.isDefined && (scriptVal.get.key.isEmpty || !currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String].isEmpty)) {
+		println("Loading " + scriptVal.get.url)
+		queryServer(scriptVal.get.url + (if (scriptVal.get.key.isEmpty) "" else currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String]), (data: js.Any) => {
+			val str = if (scriptVal.get.url.endsWith("txt")) data.asInstanceOf[String] else {
+				val obj = data.asInstanceOf[js.Array[js.Dynamic]].toList.head
+				obj.script.asInstanceOf[String]
+			}
+			println("Loaded script: " + str)
+			val localScr = Try(store.getItem("script")).getOrElse("")
+			if (!localScr.equals(str)) {
+				scriptDef = str
+				store.setItem("script", str)
+				click("loginscript")
+				setTimeout(3000) {
+					reloadAll(str)
+				}
+			} else replacePanel(t.tr.name)
+		})
+	} else replacePanel(t.tr.name)
     if (t.tr.url.isDefined) {
       val mm = t.tr.url.get.inparams.get.map(v => (v.field, if (v.fixed) v.inputField else if (v.sha256) jQuery("#" + v.inputField).value.toString.hex else jQuery("#" + v.inputField).value.toString)).toMap
       val req = mm.toJSDictionary.asInstanceOf[js.Dynamic]
@@ -1746,7 +1766,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       val mainUrl = t.tr.url.get.url + (if (t.tr.url.get.url.contains("?") || t.tr.url.get.typ.toLowerCase.equals("get")) encodeURI(stringify(req)) else "")
       if (t.tr.url.get.url.contains("mockup")) {
 		  println("We are using a mockup transition")
-		  replacePanel(t.tr.name)
+		  doTransition
 	  } else jQuery.ajax(js.Dynamic.literal(
           url = t.tr.url.get.url + (if (t.tr.url.get.url.contains("?") || t.tr.url.get.typ.toLowerCase.equals("get")) encodeURI(stringify(req)) else ""),
           data = if (t.tr.url.get.typ.toLowerCase.equals("post")) stringify(req) else "",
@@ -1756,19 +1776,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             if (array.isSuccess && array.get.length > 0) {
               currentContext = Some(t.copy(response = array.get(0)))
               loadDropdowns(dropdownsLoad.values)
-              if (scriptVal.isDefined && (scriptVal.get.key.isEmpty || !currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String].isEmpty)) queryServer(scriptVal.get.url + (if (scriptVal.get.key.isEmpty) "" else currentContext.get.response.extractV(scriptVal.get.key.get).asInstanceOf[String]), (data: js.Any) => {
-                val obj = data.asInstanceOf[js.Array[js.Dynamic]].toList.head
-                val str = obj.script.asInstanceOf[String]
-                val localScr = Try(store.getItem("script")).getOrElse("")
-                if (!localScr.equals(str)) {
-                  scriptDef = str
-                  store.setItem("script", str)
-                  click("loginscript")
-                  setTimeout(3000) {
-                    reloadAll(str)
-                  }
-                } else replacePanel(t.tr.name)
-              }) else replacePanel(t.tr.name)
+			  doTransition
             } else {
               val obj = Try(data.asInstanceOf[js.Dynamic])
               if (obj.isSuccess && (obj.get.valid.asInstanceOf[Boolean] || obj.get.status.asInstanceOf[Boolean])) {
@@ -1782,7 +1790,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         ).asInstanceOf[JQueryAjaxSettings])
     } else {
         println("Direct transition to " + t.tr.name)
-        replacePanel(t.tr.name)
+        doTransition
     }
   }
 
