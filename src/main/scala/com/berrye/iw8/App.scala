@@ -72,7 +72,7 @@ object iW8 {
 	def main(args: Array[String]): Unit = {
 		def load(url: String, script: String) {
 			scriptDef = script
-			if (url.contains("dev")) {
+			if (url.endsWith("dev")) {
 				g.document.body.appendChild(div(
 					textarea(id := "editcontent", width := "100%", rows := "30", scriptDef),
 					button(id := "reload", cls := "btn btn-info", "Load 2.0.17")).render)
