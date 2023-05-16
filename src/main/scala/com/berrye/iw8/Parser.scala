@@ -207,7 +207,7 @@ object WebParser extends JavaTokenParsers with Positional {
   val video = tag("video")
 
   case class StaticEntry(value: String, typ: String, back: Boolean, sp: Option[StaticStruct])
-  def staticEntry = stringToken ~ (("button" | "checkbox")?) ~ (("back")?) ~ ((staticStruct)?) ^^ {
+  def staticEntry = stringToken ~ (("button" | "checkbox" | "text")?) ~ (("back")?) ~ ((staticStruct)?) ^^ {
     case s ~ t ~ b ~ p => StaticEntry(s, Try(t.get).getOrElse("button"), b.isDefined, p)
   }
 
@@ -685,6 +685,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                         })
                         el.typ match {
                           case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value))
+                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value))
                           case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value))
                         }
                       }

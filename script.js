@@ -1,6 +1,7 @@
 var staticScript = `site "Some App" with {
     add "Login" login show
-        background "https://picsum.photos/1980/1020" with {
+        background "https://picsum.photos/1980/1020"
+            script "https://datadaddy.s3.amazonaws.com/ddscript.txt" with {
             add "Login" text
             add "Password" password
             add "Just click me" button with {
