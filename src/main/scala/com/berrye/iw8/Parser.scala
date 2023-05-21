@@ -684,9 +684,9 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                           jQuery("#mainpanel").append(prev.get)
                         })
                         el.typ match {
-                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value))
-                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value))
-                          case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value))
+                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
+                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := (el.value + el.typ).asId))
+                          case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
                         }
                       }
                     )
@@ -1729,7 +1729,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).
         getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).getOrElse(""))))
 
-  def resetEvents = List("ons-input", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
+  def resetEvents = List("a", "ons-input", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
 	println("Binding click to " + s)
     jQuery(s).unbind("click")
     jQuery(s).click((e: dom.Event) => processEvents(e))
@@ -1812,7 +1812,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
     val hr = if (mobileSite) getProp(e, "id") else getProp(e, "href")
     val targetInd = getProp(e, "target")
     val data = getProp(e, "data-info")
-    println("clicked " + hr + ", " + targetInd + ", " + data)
+    val dataStore = getProp(e, "data-store")
+    println("clicked " + hr + ", " + targetInd + ", " + data + ", " + dataStore)
     def allfields(cols: List[TypeDef], editObj: Option[js.Dynamic]) = for (v <- cols) yield {
       val absent = !editObj.isDefined || editObj.get.extractV(v.name) == null
       if (v.typ.equals("Boolean")) div(cls := "form-group has-label",
@@ -2171,7 +2172,10 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         } else if (!targetInd.equals("_blank")) {
           if (mobileSite) Try(document.getElementById("menumobile").asInstanceOf[js.Dynamic].close())
           val l = transitions.filter(t => t.element.equals(hr))
-          if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else repPage(hr)
+          if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else {
+			  println("repPage(" + hr + ")")
+			  repPage(hr)
+		  }
         }
     }
 	if (!resetting) {
