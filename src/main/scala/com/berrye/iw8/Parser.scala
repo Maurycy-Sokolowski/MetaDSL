@@ -860,9 +860,9 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                 h6(cls := "stats-title", ws))))
         }
         case "doughnut" => () => {
-        	setTimeout(1100) {
-        		logic
-        	}
+        	//setTimeout(1100) {
+        	//	logic
+        	//}
           updaters += mainRef -> ((dd: Int, calendar: Boolean) => setTimeout(1000) {
             Try({
             	charts(mainRef).destroy()
@@ -1557,9 +1557,9 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         } else jQuery("#" + s.asId + "datatabletitle").text(s)
         fromSetDate = ""
         toSetDate = ""
-        jQuery("#" + s.asId + "datatable").on("draw.dt", (e: JQueryEventObject) => logic)
+        //jQuery("#" + s.asId + "datatable").on("draw.dt", (e: JQueryEventObject) => logic)
       }
-      logic
+      //logic
     }, typ.toUpperCase, useBody)
     if (mobileSite) onsPage(id := s.asId, p(cls :="search-bar", style := "text-align: center; margin-top: 10px;", onsSearchInput(placeholder := "Search")), div(id := s.asId + "list", cls := "after-search-bar")) else {
       dialog("savecomplete", "Save complete", "Add/Edit is done!")
@@ -1672,13 +1672,13 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           if (searchablePanel.isDefined) {
             pages.filterKeys(k => !k.equals("main")).foreach(k => jQuery("#" + k._1).remove())
             Try(jQuery("#mainpanel").append(pages(searchablePanel.get)().render))
-            logic
+            //logic
           }
         }
       })
     } else {
       Try(jQuery("#mainpanel").append(pages(p)().render))
-      logic
+      //logic
     }
   }
 
@@ -1729,7 +1729,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).
         getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).getOrElse(""))))
 
-  def resetEvents = List("a", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
+  def resetEvents = List("ons-input", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
+	println("Binding click to " + s)
     jQuery(s).unbind("click")
     jQuery(s).click((e: dom.Event) => processEvents(e))
   })
@@ -1795,6 +1796,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
     }
   }
 
+  var resetting = false
   def processEvents(e: dom.Event) {
     if (!mobileSite && !"mainpanel".notPresent) {
       Try(jQuery(currRoot).removeClass("text-dark"))
@@ -1904,7 +1906,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         editQuery = jQuery("#addobjectbtn").attr("data-query").asInstanceOf[String]
         jQuery("#addbody").append(div(cls := "category form-category","* Required fields").render)
         click("addobjectwindow")
-        logic
       }
       case "getmultiadd" => {
         lastDialog = "addobjectwindow"
@@ -1913,7 +1914,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         jQuery("#multibody").append(allfields(currentCols.filter(_.typ.equals("add")).head.exp.td.filter(_.multi.isDefined).head.multi.get.td, None).render)
         jQuery("#multibody").append(div(cls := "category form-category","* Required fields").render)
         click("multiwindow")
-        logic
       }
       case "getmultiedit" => {
         lastDialog = "editobjectwindow"
@@ -1922,7 +1922,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         jQuery("#multibody").append(allfields(currentCols.filter(_.typ.equals("edit")).head.exp.td.filter(_.multi.isDefined).head.multi.get.td, None).render)
         jQuery("#multibody").append(div(cls := "category form-category","* Required fields").render)
         click("multiwindow")
-        logic
       }
       case "editobject" => {
         val root = e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element]
@@ -1934,7 +1933,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         editQuery = root.attributes.getNamedItem("data-query").value
         jQuery("#editbody").append(div(cls := "category form-category","* Required fields").render)
         click("editobjectwindow")
-        logic
       }
       case "editdeleteobject" => {
         val root = e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element]
@@ -1993,7 +1991,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
               }).getOrElse(td()))).render)
               loadDropdowns(dropdownsLoad.filterKeys(editQuery.startsWith(_)).values)
               click("savecomplete")
-              logic
             }
           },
           error = { (jqXHR: JQueryXHR, textStatus: js.Any, errorThrow: js.Any) => click("saveerror") },
@@ -2039,7 +2036,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
               )
             ).render
           )
-          logic
         }
       }
       case "saveedit" => {
@@ -2112,7 +2108,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         editObj = eom.toJSDictionary.asInstanceOf[js.Dynamic]
         println(stringify(editObj))
         click(lastDialog)
-        logic
       }
       case "setdate" => {
         val fr = Moment(jQuery("#datefrom").value().asInstanceOf[String])
@@ -2149,7 +2144,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           jQuery("#multibodyedit").append(allfields(currentCols.filter(_.typ.equals("edit")).head.exp.td.filter(_.multi.isDefined).head.multi.get.td, Some(editObjMulti)).render)
           jQuery("#multibodyedit").append(div(cls := "category form-category","* Required fields").render)
           click("multiwindowedit")
-          logic
         } else if (hr.contains("multidelete")) {
           val ref = hr.indexOf("multidelete")
           val arrayName = hr.slice(0, ref)
@@ -2180,6 +2174,13 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else repPage(hr)
         }
     }
+	if (!resetting) {
+		resetting = true
+		setTimeout(500) {
+			resetting = false
+			resetEvents
+		}
+	}
   }
 
   def logic {
