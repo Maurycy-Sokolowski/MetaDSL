@@ -1729,11 +1729,23 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).
         getOrElse(Try(getRawProp(e.target.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element].parentNode.asInstanceOf[org.scalajs.dom.raw.Element], p)).getOrElse(""))))
 
-  def resetEvents = List("a", "ons-input", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
-	println("Binding click to " + s)
-    jQuery(s).unbind("click")
-    jQuery(s).click((e: dom.Event) => processEvents(e))
-  })
+  def resetEvents = {
+	  List("a", "ons-button", "ons-list-item", "ons-tab", "ons-toolbar-button").foreach(s => {
+		println("Binding click to " + s)
+		jQuery(s).unbind("click")
+		jQuery(s).click((e: dom.Event) => processEvents(e))
+	})
+	List("ons-input").foreach(s => {
+		println("Binding blur to " + s)
+		jQuery(s).unbind("blur")
+		jQuery(s).blur((e: dom.Event) => processEvents(e))
+	})
+	List("ons-input").foreach(s => {
+		println("Binding focus to " + s)
+		jQuery(s).unbind("focus")
+		jQuery(s).focus((e: dom.Event) => processEvents(e))
+	})
+  }
 
   def transit(t: Context) = {
     currentContext = Some(t)
@@ -2175,8 +2187,17 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 			  println("repPage(" + hr + ")")
 			  if (dataStore.isEmpty) repPage(hr) else {
 				  println("We have a static element")
-				  if (e.`type`.equals("click")) println("We have a click!")
-				  jQuery("#" + hr).value("Lalala")
+				  e.`type`match {
+					  case "blur" => {
+						  val lstr = jQuery("#" + hr).value().asInstanceOf[String]
+						  if (!lstr.isEmpty) store.setItem(dataStore, lstr)
+					  }
+					  case "focus" => {
+						  val lstr = Try(store.getItem(dataStore).asInstanceOf[String]).getOrElse("")
+						  if (!lstr.isEmpty) jQuery("#" + hr).value(lstr)
+					  }
+					  case _ =>
+				  }
 			  }
 		  }
         }
