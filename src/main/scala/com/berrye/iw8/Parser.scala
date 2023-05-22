@@ -1808,12 +1808,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         jQuery(currSelected).addClass("active")
       })
     }
-    println("here!!!!! " + e.target.asInstanceOf[org.scalajs.dom.raw.Element].outerHTML)
     val hr = if (mobileSite) getProp(e, "id") else getProp(e, "href")
     val targetInd = getProp(e, "target")
     val data = getProp(e, "data-info")
     val dataStore = getProp(e, "data-store")
-    println("clicked " + hr + ", " + targetInd + ", " + data + ", " + dataStore)
+    println("Event " + e.`type` + ", " + e.target.asInstanceOf[org.scalajs.dom.raw.Element].outerHTML + ", " + hr + ", " + targetInd + ", " + data + ", " + dataStore)
     def allfields(cols: List[TypeDef], editObj: Option[js.Dynamic]) = for (v <- cols) yield {
       val absent = !editObj.isDefined || editObj.get.extractV(v.name) == null
       if (v.typ.equals("Boolean")) div(cls := "form-group has-label",
@@ -2174,7 +2173,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           val l = transitions.filter(t => t.element.equals(hr))
           if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else {
 			  println("repPage(" + hr + ")")
-			  repPage(hr)
+			  if (dataStore.isEmpty) repPage(hr) else {
+				  println("We have a static element")
+				  if (e.`type`.equals("click")) println("We have a click!")
+				  jQuery("#" + hr).value("Lalala")
+			  }
 		  }
         }
     }
