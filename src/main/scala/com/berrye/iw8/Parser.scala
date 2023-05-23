@@ -685,7 +685,10 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                         })
                         el.typ match {
                           case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
-                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := (el.value + el.typ).asId))
+                          case "text" => onsListItem({
+							  val dataStore = (el.value + el.typ).asId
+							  if (store.getItem(dataStore) != null) onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, attr("value") := store.getItem(dataStore).asInstanceOf[String]) else onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore)
+						  })
                           case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
                         }
                       }
@@ -2189,12 +2192,14 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 				  println("We have a static element")
 				  e.`type`match {
 					  case "blur" => {
-						  val lstr = jQuery("#" + hr).value().asInstanceOf[String]
-						  if (!lstr.isEmpty) store.setItem(dataStore, lstr)
+						  val nstr = jQuery("#" + hr).value().asInstanceOf[String]
+						  if (store.getItem(dataStore) == null || !nstr.equals(store.getItem(dataStore).asInstanceOf[String])) {
+							  if (nstr.isEmpty) store.removeItem(dataStore) else store.setItem(dataStore, nstr)
+						  }
 					  }
 					  case "focus" => {
-						  val lstr = Try(store.getItem(dataStore).asInstanceOf[String]).getOrElse("")
-						  if (!lstr.isEmpty) jQuery("#" + hr).value(lstr)
+						  val cstr = jQuery("#" + hr).value()
+						  if (store.getItem(dataStore) == null || !store.getItem(dataStore).asInstanceOf[String].equals(cstr)) jQuery("#" + hr).value(store.getItem(dataStore).asInstanceOf[String])
 					  }
 					  case _ =>
 				  }
