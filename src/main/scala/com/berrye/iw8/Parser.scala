@@ -683,13 +683,12 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                           jQuery("#mainpanel").empty()
                           jQuery("#mainpanel").append(prev.get)
                         })
+						val dataStore = (el.value + el.typ).asId
+						println("dataStore: " + dataStore + " -> " + (if (store.getItem(dataStore) != null) store.getItem(dataStore).asInstanceOf[String] else "None"))
                         el.typ match {
-                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
-                          case "text" => onsListItem({
-							  val dataStore = (el.value + el.typ).asId
-							  if (store.getItem(dataStore) != null) onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, attr("value") := store.getItem(dataStore).asInstanceOf[String]) else onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore)
-						  })
-                          case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := (el.value + el.typ).asId))
+                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (store.getItem(dataStore) != null && store.getItem(dataStore).asInstanceOf[String].equals("true")) `checked` := ""))
+                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (store.getItem(dataStore) != null) attr("value") := store.getItem(dataStore).asInstanceOf[String]))
+                          case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := dataStore))
                         }
                       }
                     )
@@ -1671,7 +1670,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       jQuery("#mainsearch").keyup((Event: JQueryEventObject, ui: js.Dynamic) => {
         Try(clearTimeout(timer))
         timer = setTimeout(1000) {
-          searchValue = jQuery("#mainsearch").value().asInstanceOf[String]
+          searchValue = jQuery("#mainsearch").value.asInstanceOf[String]
           if (searchablePanel.isDefined) {
             pages.filterKeys(k => !k.equals("main")).foreach(k => jQuery("#" + k._1).remove())
             Try(jQuery("#mainpanel").append(pages(searchablePanel.get)().render))
@@ -1683,6 +1682,9 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       Try(jQuery("#mainpanel").append(pages(p)().render))
       //logic
     }
+	setTimeout(500) {
+		resetEvents
+	}
   }
 
   var editObj: js.Dynamic = _
@@ -1811,7 +1813,6 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
     }
   }
 
-  var resetting = false
   def processEvents(e: dom.Event) {
     if (!mobileSite && !"mainpanel".notPresent) {
       Try(jQuery(currRoot).removeClass("text-dark"))
@@ -1888,7 +1889,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       val vv = if (v.formats.dropdownId.isDefined) {
         val mm = dropdowns(v.formats.dropdown.get.url).map(_.swap)
         println("processCols: " + mm)
-        val str = jQuery("#" + "dropdown" + v.name.asId).value().asInstanceOf[String].replaceAll("  "," ")
+        val str = jQuery("#" + "dropdown" + v.name.asId).value.asInstanceOf[String].replaceAll("  "," ")
         println("processCols: " + str + ", " + Try(mm(str)).getOrElse(-1).asInstanceOf[js.Dynamic])
         Try(mm(str)).getOrElse(-1).asInstanceOf[js.Dynamic]
       } else if (jQuery("#" + "edit" + v.name.asId).is(":checkbox")) jQuery("#" + "edit" + v.name.asId).is(":checked").asInstanceOf[js.Dynamic] else if (v.typ.equals("Number")) g.parseFloat(jQuery("#" + "edit" + v.name.asId).value) else jQuery("#" + "edit" + v.name.asId).value
@@ -1912,7 +1913,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       case "dates" => click("dateswindow")
       case "edit" => click("editwindow")
       case "reload" => {
-        scriptDef = jQuery("#editcontent").value().toString
+        scriptDef = jQuery("#editcontent").value.toString
         reloadAll(scriptDef)
       }
       case "addobject" => {
@@ -2125,8 +2126,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         click(lastDialog)
       }
       case "setdate" => {
-        val fr = Moment(jQuery("#datefrom").value().asInstanceOf[String])
-        val to = Moment(jQuery("#dateto").value().asInstanceOf[String])
+        val fr = Moment(jQuery("#datefrom").value.asInstanceOf[String])
+        val to = Moment(jQuery("#dateto").value.asInstanceOf[String])
         fromSetDate = fr.format().dropRight(6)
         toSetDate = to.format().dropRight(6)
         println("Set range: " + fromSetDate + " to " + toSetDate)
@@ -2187,19 +2188,28 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           if (mobileSite) Try(document.getElementById("menumobile").asInstanceOf[js.Dynamic].close())
           val l = transitions.filter(t => t.element.equals(hr))
           if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else {
-			  println("repPage(" + hr + ")")
 			  if (dataStore.isEmpty) repPage(hr) else {
 				  println("We have a static element")
 				  e.`type`match {
-					  case "blur" => {
-						  val nstr = jQuery("#" + hr).value().asInstanceOf[String]
+					  case "blur" => if (dataStore.endsWith("text")) {
+						  val nstr = jQuery("#" + hr).value.asInstanceOf[String]
+						  //jQuery("#" + hr).attr("value", nstr)
+						  //println("nstr: " + nstr)
 						  if (store.getItem(dataStore) == null || !nstr.equals(store.getItem(dataStore).asInstanceOf[String])) {
 							  if (nstr.isEmpty) store.removeItem(dataStore) else store.setItem(dataStore, nstr)
 						  }
 					  }
-					  case "focus" => {
-						  val cstr = jQuery("#" + hr).value()
-						  if (store.getItem(dataStore) == null || !store.getItem(dataStore).asInstanceOf[String].equals(cstr)) jQuery("#" + hr).value(store.getItem(dataStore).asInstanceOf[String])
+					  case "focus" => if (dataStore.endsWith("text")) {
+						  val cstr = jQuery("#" + hr).value
+						  if (store.getItem(dataStore) != null && !store.getItem(dataStore).asInstanceOf[String].equals(cstr)) {
+							  println("Setting value of " + hr + " to " + store.getItem(dataStore).asInstanceOf[String])
+							  jQuery("#" + hr).value(store.getItem(dataStore).asInstanceOf[String])
+						  }
+					  }
+					  case "click" => if (dataStore.endsWith("checkbox")) {
+						  val checked = if (jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]) "true" else "false"
+						  println("checked to store: " + checked)
+						  if (store.getItem(dataStore) == null || !checked.equals(store.getItem(dataStore).asInstanceOf[String])) store.setItem(dataStore, checked)
 					  }
 					  case _ =>
 				  }
@@ -2207,12 +2217,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 		  }
         }
     }
-	if (!resetting) {
-		resetting = true
-		setTimeout(500) {
-			resetting = false
-			resetEvents
-		}
+	setTimeout(500) {
+		resetEvents
 	}
   }
 
@@ -2224,6 +2230,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         if (keycode == 13 && "mainpanel".notPresent) Try(transit(transitions(0)))
       })
     }
-    resetEvents
+	setTimeout(500) {
+		resetEvents
+	}
   }
 }
