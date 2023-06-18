@@ -1,21 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<style>
-    .iPhoneXHeader {
-         padding-top: env(safe-area-inset-top);
-    }
-    .iPhoneXFooter {
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-    }
-    @supports(padding: max(0px)) {
-        .iPhoneXFooter {
-            padding-left: max(10px, env(safe-area-inset-left));
-            padding-right: max(10px, env(safe-area-inset-right));
-        }
-    }
-</style>
 <head>
   <meta charset="utf-8" />
   <link rel="apple-touch-icon" sizes="76x76" href="assets/img/apple-icon.png">
@@ -88,6 +72,7 @@
   <script src="assets/js/now-ui-dashboard.min.js?v=1.1.1" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@3.0.0-beta.4/dist/signature_pad.umd.min.js"></script>
   <script type="text/javascript" charset="utf-8" src="cordova.js"></script>  
+  <script src="require.js" type="text/javascript"></script>
    <!-- DSL Script loaded this way to bypass Same origin restrictions -->
    <script src="script.js" type="text/javascript"></script>
   <script type="text/javascript" src="target/scala-2.13/metadsl-jsdeps.min.js"></script>

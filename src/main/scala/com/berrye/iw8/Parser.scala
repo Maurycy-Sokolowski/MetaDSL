@@ -16,7 +16,9 @@ import scalatags.JsDom._
 import org.scalajs.dom._
 import org.scalajs.dom.html
 import js.Dynamic.{ global => g }
+import js.annotation.JSImport
 import js.annotation.JSExport
+import js.annotation.JSName
 import js.isUndefined
 import js.URIUtils._
 import js.Dynamic.{ literal => lit }
@@ -27,6 +29,7 @@ import js.JSConverters._
 import scala.reflect._
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{ FiniteDuration, TimeUnit }
+import scala.concurrent.ExecutionContext.Implicits.global
 import js.Dynamic.literal
 import math._
 import moment._
@@ -2222,6 +2225,14 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 	}
   }
 
+  /*@js.native
+  @JSImport("@capacitor/status-bar", "StatusBar")
+  object StatusBar extends js.Object {
+      def show(): Unit = js.native
+      def setOverlaysWebView(overlay:js.Dynamic): Unit = js.native
+      def setStyle(style:js.Dynamic): Unit = js.native
+  }*/
+
   def logic {
     if (!mobileSite && "mainpanel".notPresent) {
       //jQuery("select").selectpicker()
@@ -2231,7 +2242,14 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
       })
     }
 	setTimeout(500) {
-		resetEvents
+        /*if (mobileSite) {
+            val res = js.dynamicImport {
+                StatusBar.show()
+                StatusBar.setOverlaysWebView(js.Dynamic.literal(overlay = true))
+                StatusBar.setStyle(js.Dynamic.literal(style = true))
+            }
+        }*/
+	    resetEvents
 	}
   }
 }
