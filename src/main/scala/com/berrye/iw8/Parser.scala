@@ -219,20 +219,18 @@ object WebParser extends JavaTokenParsers with Positional {
     case l => StaticStruct(l)
   }
 
-    def getObject(key: String) = {
-        val mm = Try({
-            val sobj = store.getItem(key).asInstanceOf[String]
-            println("obj loaded: " + sobj)
-            JSON.parse(sobj).asInstanceOf[js.Dictionary[js.Dynamic]].toMap
-        }).getOrElse(Map[String, Any]())
-        println("We loaded object: " + mm.toString)
-        mm
+ 
+    def getObject(key: String) = Try(JSON.parse(store.getItem(key).asInstanceOf[String]).asInstanceOf[js.Dictionary[js.Dynamic]]).getOrElse(js.Dynamic.literal().asInstanceOf[js.Dictionary[js.Dynamic]])
+
+    def updateMap(m: Map[String, Any], hier: Seq[String], v: Any): Map[String, Any] = hier.toList match {
+        case Nil => m
+        case List(h) => m + (h -> v)
+        case h :: t => m + (h -> updateMap(if (m.contains(h)) m(h).asInstanceOf[js.Dictionary[js.Dynamic]].toMap else Map[String, Any](), t, v).toJSDictionary.asInstanceOf[js.Dictionary[js.Dynamic]])
     }
 
-    def updateObject(key: String, hier: String, v: Any): Unit = {
-        val mm = getObject(key) + (hier -> v)
+    def updateObject(key: String, hier: Seq[String], v: Any): Unit = {
+        val mm = updateMap(getObject(key).toMap, hier, v)
         val obj = mm.toJSDictionary.asInstanceOf[js.Dynamic]
-        println("We are storing: " + mm + " => " + stringify(obj))
         store.setItem(key, stringify(obj))
     }
 
@@ -704,11 +702,14 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                           jQuery("#mainpanel").append(prev.get)
                         })
 						val dataStore = accum + "/" + el.value + "/type=" + el.typ
-                        val mm = getObject("dataStore")
-						println("dataStore: " + dataStore + " -> " + (if (mm.contains(dataStore)) mm(dataStore).toString else ""))
+                        val hier = (accum + "/" + el.value).split("/").filter(!_.isEmpty)
+                        val obj = getObject("dataStore")
+                        println("Retrieving " + stringify(obj))
+                        val vv = obj.extract(hier)
+						println("dataStore: " + dataStore + " -> " + (if (vv != null) vv.toString else "None"))
                         el.typ match {
-                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (mm.contains(dataStore) && mm(dataStore).asInstanceOf[Boolean]) `checked` := ""))
-                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (mm.contains(dataStore)) attr("value") := mm(dataStore).asInstanceOf[String]))
+                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (vv != null && vv.asInstanceOf[Boolean]) `checked` := ""))
+                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
                           case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := dataStore))
                         }
                       }
@@ -751,6 +752,13 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
   }
 
   val indexed = "([A-Za-z]+)\\(([0-9]+)\\)".r
+
+    implicit class pjd(o: js.Dictionary[js.Dynamic]) {
+       def extract(a: Array[String]) = a.foldLeft(o)((oo, ss) => Try({
+           val mm = oo.toMap
+           mm(ss).asInstanceOf[js.Dictionary[js.Dynamic]]
+        }).getOrElse(null.asInstanceOf[js.Dictionary[js.Dynamic]]))
+    }
 
     implicit class pjs(o: js.Dynamic) {
         def extractV(s: String) = {
@@ -2214,22 +2222,26 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 				  e.`type` match {
 					  case "blur" => if (dataStore.endsWith("/type=text")) {
 						  val nstr = jQuery("#" + hr).value.asInstanceOf[String]
+                          val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
 						  //jQuery("#" + hr).attr("value", nstr)
 						  //println("nstr: " + nstr)
-                          updateObject("dataStore", dataStore, nstr)
+                          updateObject("dataStore", hier, nstr)
 					  }
 					  case "focus" => if (dataStore.endsWith("/type=text")) {
 						  val cstr = jQuery("#" + hr).value
-                          val mm = getObject("dataStore")
-						  if (mm.contains(dataStore) && !mm(dataStore).asInstanceOf[String].equals(cstr)) {
-							  println("Setting value of " + hr + " to " + mm(dataStore).asInstanceOf[String])
-							  jQuery("#" + hr).value(mm(dataStore).asInstanceOf[String])
+                          val obj = getObject("dataStore")
+                          val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
+                          val vv = obj.extract(hier)
+						  if (vv != null && vv.asInstanceOf[String].equals(cstr)) {
+							  println("Setting value of " + hr + " to " + vv.asInstanceOf[String])
+							  jQuery("#" + hr).value(vv.asInstanceOf[String])
 						  }
 					  }
 					  case "click" => if (dataStore.endsWith("/type=checkbox")) {
 						  val checked = jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]
+                          val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
 						  println("checked to store: " + checked)
-						  updateObject("dataStore", dataStore, checked)
+						  updateObject("dataStore", hier, checked)
 					  }
 					  case _ =>
 				  }
