@@ -220,7 +220,7 @@ object WebParser extends JavaTokenParsers with Positional {
   }
 
  
-    def getObject(key: String) = Try(JSON.parse(store.getItem(key).asInstanceOf[String]).asInstanceOf[js.Dictionary[js.Dynamic]]).getOrElse(js.Dynamic.literal().asInstanceOf[js.Dictionary[js.Dynamic]])
+    def getObject(key: String) = Try(JSON.parse(store.getItem(key).asInstanceOf[String]).asInstanceOf[js.Dictionary[js.Dynamic]]).getOrElse(Map().asInstanceOf[js.Dictionary[js.Dynamic]])
 
     def updateMap(m: Map[String, Any], hier: Seq[String], v: Any): Map[String, Any] = hier.toList match {
         case Nil => m
@@ -229,7 +229,7 @@ object WebParser extends JavaTokenParsers with Positional {
     }
 
     def updateObject(key: String, hier: Seq[String], v: Any): Unit = {
-        val mm = updateMap(getObject(key).toMap, hier, v)
+        val mm = updateMap(Try(getObject(key).toMap).getOrElse(Map()), hier, v)
         val obj = mm.toJSDictionary.asInstanceOf[js.Dynamic]
         store.setItem(key, stringify(obj))
     }
@@ -703,7 +703,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                         })
 						val dataStore = accum + "/" + el.value + "/type=" + el.typ
                         val hier = (accum + "/" + el.value).split("/").filter(!_.isEmpty)
-                        val obj = getObject("dataStore")
+                        val obj = getObject("data")
                         println("Retrieving " + stringify(obj))
                         val vv = obj.extract(hier)
 						println("dataStore: " + dataStore + " -> " + (if (vv != null) vv.toString else "None"))
@@ -2225,11 +2225,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                           val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
 						  //jQuery("#" + hr).attr("value", nstr)
 						  //println("nstr: " + nstr)
-                          updateObject("dataStore", hier, nstr)
+                          updateObject("data", hier, nstr)
 					  }
 					  case "focus" => if (dataStore.endsWith("/type=text")) {
 						  val cstr = jQuery("#" + hr).value
-                          val obj = getObject("dataStore")
+                          val obj = getObject("data")
                           val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
                           val vv = obj.extract(hier)
 						  if (vv != null && vv.asInstanceOf[String].equals(cstr)) {
@@ -2241,7 +2241,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 						  val checked = jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]
                           val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
 						  println("checked to store: " + checked)
-						  updateObject("dataStore", hier, checked)
+						  updateObject("data", hier, checked)
 					  }
 					  case _ =>
 				  }
