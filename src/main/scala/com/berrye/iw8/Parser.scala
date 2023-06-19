@@ -219,6 +219,23 @@ object WebParser extends JavaTokenParsers with Positional {
     case l => StaticStruct(l)
   }
 
+    def getObject(key: String) = {
+        val mm = Try({
+            val sobj = store.getItem(key).asInstanceOf[String]
+            println("obj loaded: " + sobj)
+            JSON.parse(sobj).asInstanceOf[js.Dictionary[js.Dynamic]].toMap
+        }).getOrElse(Map[String, Any]())
+        println("We loaded object: " + mm.toString)
+        mm
+    }
+
+    def updateObject(key: String, hier: String, v: Any): Unit = {
+        val mm = getObject(key) + (hier -> v)
+        val obj = mm.toJSDictionary.asInstanceOf[js.Dynamic]
+        println("We are storing: " + mm + " => " + stringify(obj))
+        store.setItem(key, stringify(obj))
+    }
+
 def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" ~> stringToken)?) ~ (("lines" ~> "{" ~> rep(stringToken) <~ "}")?) ~ (("footer" ~> stringToken)?) ~ ("dashboard" | "dasheader" | "login" | "main" | "menu" | "table" | "page") ~ (("items" ~> wholeNumber)?) ~ (wholeNumber?) ~ (header?) ~ ("show"?) ~ (("color" ~> stringToken)?) ~ (("background" ~> stringToken)?) ~ (("script" ~> scriptTok)?) ~ (("with" ~> "{" ~> rep(elements) <~ "}")?) ~ (("display" ~> "{" ~> query <~ "}")?) ~ (rep(panel)?) ~ (rep(go)?) ~ (("widgets" ~> "{" ~> rep(widgets) <~ "}")?) ~ (("entries" ~> "{" ~> rep(reports) <~ "}")?) ~ ((staticStruct)?) ^^ {
     case s ~ title ~ message ~ lines ~ footer ~ t ~ itemsNum ~ days ~ header ~ sh ~ mainColor ~ back ~ scriptEl ~ elems ~ disp ~ pl ~ trans ~ widg ~ men ~ static => {
       println("adding " + s + ", " + t)
@@ -668,29 +685,30 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         case "table" => {
           menu = menu ++ List((s, t, None))
           pages += s -> (() => if (static.isDefined && static.get.l.size > 0) {
-            def produce(s: String, static: StaticStruct, prev: Option[org.scalajs.dom.Node] = None): JsDom.TypedTag[org.scalajs.dom.raw.Element] = {
+            def produce(accum: String, header: String, static: StaticStruct, prev: Option[org.scalajs.dom.Node] = None): JsDom.TypedTag[org.scalajs.dom.raw.Element] = {
               lazy val pp: JsDom.TypedTag[org.scalajs.dom.raw.Element] = onsPage(id := s.asId,
                 p(cls :="search-bar", style := "text-align: center; margin-top: 10px;",
                   div(id := s.asId + "list",
                     onsList(
-                      onsListHeader(s),
+                      onsListHeader(header),
                       for (el <- static.l) yield {
                         val idd = UUID.uuid.replaceAll("-","")
                         if (el.sp.isDefined) jQuery(document).on("click", "#" + idd, (ev: JQueryEventObject) => {
                           currPanel = ""
                           jQuery("#mainpanel").empty()
-                          jQuery("#mainpanel").append(produce(el.value, el.sp.get, Some(pp.render)).render)
+                          jQuery("#mainpanel").append(produce(accum + "/" + el.value, el.value, el.sp.get, Some(pp.render)).render)
                         })
                         if (el.back && prev.isDefined) jQuery(document).on("click", "#" + idd, (ev: JQueryEventObject) => {
                           currPanel = ""
                           jQuery("#mainpanel").empty()
                           jQuery("#mainpanel").append(prev.get)
                         })
-						val dataStore = (el.value + el.typ).asId
-						println("dataStore: " + dataStore + " -> " + (if (store.getItem(dataStore) != null) store.getItem(dataStore).asInstanceOf[String] else "None"))
+						val dataStore = accum + "/" + el.value + "/type=" + el.typ
+                        val mm = getObject("dataStore")
+						println("dataStore: " + dataStore + " -> " + (if (mm.contains(dataStore)) mm(dataStore).toString else ""))
                         el.typ match {
-                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (store.getItem(dataStore) != null && store.getItem(dataStore).asInstanceOf[String].equals("true")) `checked` := ""))
-                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (store.getItem(dataStore) != null) attr("value") := store.getItem(dataStore).asInstanceOf[String]))
+                          case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (mm.contains(dataStore) && mm(dataStore).asInstanceOf[Boolean]) `checked` := ""))
+                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (mm.contains(dataStore)) attr("value") := mm(dataStore).asInstanceOf[String]))
                           case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := dataStore))
                         }
                       }
@@ -700,7 +718,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
               )
               pp
             }
-            produce(s, static.get)
+            produce("", s, static.get)
           } else {
             searchablePanel = Some(s)
             tableDiv(title, message, footer, queryFormat(disp.get, if (!disp.get.typ.toUpperCase.equals("GET")) "" else if (searchValue.isEmpty) {
@@ -734,18 +752,18 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 
   val indexed = "([A-Za-z]+)\\(([0-9]+)\\)".r
 
-  implicit class pjs(o: js.Dynamic) {
-	 def extractV(s: String) = {
-		 s.split("\\.").foldLeft(o)((oo, ss) => {
-       val m = oo.asInstanceOf[js.Dictionary[js.Dynamic]].toMap
-       Try({
-          val indexed(field, idx) = ss
-          val aa = m(field).asInstanceOf[js.Array[js.Dynamic]].toArray
-          aa(idx.toInt)
-       }).getOrElse(m(ss))
-		})
-	 }
- }
+    implicit class pjs(o: js.Dynamic) {
+        def extractV(s: String) = {
+            s.split("\\.").foldLeft(o)((oo, ss) => {
+                val m = oo.asInstanceOf[js.Dictionary[js.Dynamic]].toMap
+                Try({
+                    val indexed(field, idx) = ss
+                    val aa = m(field).asInstanceOf[js.Array[js.Dynamic]].toArray
+                    aa(idx.toInt)
+                }).getOrElse(m(ss))
+            })
+        }
+    }
 
   def printme = js.Function {
     window.print()
@@ -2192,27 +2210,26 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           val l = transitions.filter(t => t.element.equals(hr))
           if (l.length > 0) transit(l(0)) else if (permUpdaters.contains(hr)) permUpdaters(hr)() else {
 			  if (dataStore.isEmpty) repPage(hr) else {
-				  println("We have a static element")
-				  e.`type`match {
-					  case "blur" => if (dataStore.endsWith("text")) {
+				  println("We have a static element: " + hr)
+				  e.`type` match {
+					  case "blur" => if (dataStore.endsWith("/type=text")) {
 						  val nstr = jQuery("#" + hr).value.asInstanceOf[String]
 						  //jQuery("#" + hr).attr("value", nstr)
 						  //println("nstr: " + nstr)
-						  if (store.getItem(dataStore) == null || !nstr.equals(store.getItem(dataStore).asInstanceOf[String])) {
-							  if (nstr.isEmpty) store.removeItem(dataStore) else store.setItem(dataStore, nstr)
-						  }
+                          updateObject("dataStore", dataStore, nstr)
 					  }
-					  case "focus" => if (dataStore.endsWith("text")) {
+					  case "focus" => if (dataStore.endsWith("/type=text")) {
 						  val cstr = jQuery("#" + hr).value
-						  if (store.getItem(dataStore) != null && !store.getItem(dataStore).asInstanceOf[String].equals(cstr)) {
-							  println("Setting value of " + hr + " to " + store.getItem(dataStore).asInstanceOf[String])
-							  jQuery("#" + hr).value(store.getItem(dataStore).asInstanceOf[String])
+                          val mm = getObject("dataStore")
+						  if (mm.contains(dataStore) && !mm(dataStore).asInstanceOf[String].equals(cstr)) {
+							  println("Setting value of " + hr + " to " + mm(dataStore).asInstanceOf[String])
+							  jQuery("#" + hr).value(mm(dataStore).asInstanceOf[String])
 						  }
 					  }
-					  case "click" => if (dataStore.endsWith("checkbox")) {
-						  val checked = if (jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]) "true" else "false"
+					  case "click" => if (dataStore.endsWith("/type=checkbox")) {
+						  val checked = jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]
 						  println("checked to store: " + checked)
-						  if (store.getItem(dataStore) == null || !checked.equals(store.getItem(dataStore).asInstanceOf[String])) store.setItem(dataStore, checked)
+						  updateObject("dataStore", dataStore, checked)
 					  }
 					  case _ =>
 				  }
