@@ -13,6 +13,7 @@ import org.scalajs.jquery._
 import org.scalajs.jquery.{jQuery => JQ, JQueryAjaxSettings, JQueryXHR}
 import scalatags.JsDom.all._
 import scalatags.JsDom._
+import org.scalajs.dom.raw.HTMLImageElement
 import org.scalajs.dom._
 import org.scalajs.dom.html
 import js.Dynamic.{ global => g }
@@ -44,6 +45,7 @@ object WebParser extends JavaTokenParsers with Positional {
   var scriptVal: Option[ScriptCls] = None
   var name = ""
   var pages = Map[String, () => JsDom.TypedTag[org.scalajs.dom.raw.Element]]()
+  var sigs = Map[String, SignaturePad]()
   var dropdownsLoad = Map[String, Formats]()
   var dropdowns = Map[String, Map[Int, String]]()
   var menu = List[(String, String, Option[List[String]])]()
@@ -210,7 +212,7 @@ object WebParser extends JavaTokenParsers with Positional {
   val video = tag("video")
 
   case class StaticEntry(value: String, typ: String, back: Boolean, sp: Option[StaticStruct])
-  def staticEntry = stringToken ~ (("button" | "checkbox" | "text")?) ~ (("back")?) ~ ((staticStruct)?) ^^ {
+  def staticEntry = stringToken ~ (("button" | "checkbox" | "text" | "signature")?) ~ (("back")?) ~ ((staticStruct)?) ^^ {
     case s ~ t ~ b ~ p => StaticEntry(s, Try(t.get).getOrElse("button"), b.isDefined, p)
   }
 
@@ -230,7 +232,8 @@ object WebParser extends JavaTokenParsers with Positional {
 
     def updateObject(key: String, hier: Seq[String], v: Any): Unit = {
         val mm = updateMap(Try(getObject(key).toMap).getOrElse(Map()), hier, v)
-        val obj = mm.toJSDictionary.asInstanceOf[js.Dynamic]
+        val mmid = if (!mm.contains("ID")) mm ++ Map("id" -> UUID.uuid) else mm
+        val obj = mmid.toJSDictionary.asInstanceOf[js.Dynamic]
         store.setItem(key, stringify(obj))
     }
 
@@ -392,7 +395,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                       for (e <- elems.get if (e.typ.equals("text") || e.typ.equals("password"))) yield onsListItem(onsInput(id := e.name.asInput, `type` := e.typ, modifier := "material underbar", placeholder := e.name, Try(value := pp.get(e.name.asInput).replaceAll("undefined", "")).getOrElse(value := ""))),
                       for (e <- elems.get if (e.typ.equals("remember"))) yield onsListItem(onsCheckbox(id := "rememberme", if (store.getItem("rememberme") != null) `checked` := "", e.name)),
                       for (e <- elems.get if e.typ.equals("button")) yield onsListItem(onsButton(id := e.name.asButton, modifier := "large", e.name)),
-                      onsListItem(onsButton(id := "forgot", cls := "forgot-password", modifier := "quiet", "Forgot password?"))
+                      if (elems.get.filter(_.typ.equals("remember")).size > 0) onsListItem(onsButton(id := "forgot", cls := "forgot-password", modifier := "quiet", "Forgot password?"))
                     )
                   )
               )
@@ -710,7 +713,22 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                         el.typ match {
                           case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (vv != null && vv.asInstanceOf[Boolean]) `checked` := ""))
                           case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
-                          case _ => onsListItem(onsButton(id := idd, modifier := "large", el.value, attr("data-store") := dataStore))
+                          case "signature" => {
+                            setTimeout(1000) {
+                                val canvas = jQuery("#" + idd).get(0).asInstanceOf[html.Canvas]
+                                if (vv != null) {
+                                    val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+                                    var image = dom.document.createElement("img").asInstanceOf[HTMLImageElement]
+                                    image.src = vv.toString
+                                    image.onload = (e: dom.Event) => {
+                                        ctx.drawImage(image, 0, 0)
+                                    }
+                                }
+                                sigs += idd -> new SignaturePad(canvas)
+                            }
+                            onsListItem(modifier := "longdivider", canvas(id := idd, style := "background-color: lightGrey;", attr("data-store") := dataStore, width := /*(window.innerWidth / 2) +*/ "300px", height := /*(window.innerHeight / 2) +*/ "150px"))
+                          }
+                          case _ => onsListItem(modifier := "longdivider", onsButton(id := idd, modifier := "large", el.value, attr("data-store") := dataStore))
                         }
                       }
                     )
@@ -1769,15 +1787,30 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 		jQuery(s).unbind("click")
 		jQuery(s).click((e: dom.Event) => processEvents(e))
 	})
-	List("ons-input").foreach(s => {
+	List("ons-input", "canvas").foreach(s => {
 		println("Binding blur to " + s)
 		jQuery(s).unbind("blur")
 		jQuery(s).blur((e: dom.Event) => processEvents(e))
 	})
-	List("ons-input").foreach(s => {
+	List("ons-input", "canvas").foreach(s => {
 		println("Binding focus to " + s)
 		jQuery(s).unbind("focus")
 		jQuery(s).focus((e: dom.Event) => processEvents(e))
+	})
+	List("canvas").foreach(s => {
+		println("Binding dblclick to " + s)
+		jQuery(s).unbind("dblclick")
+		jQuery(s).dblclick((e: dom.Event) => processEvents(e))
+	})
+	List("canvas").foreach(s => {
+		println("Binding mouseover to " + s)
+		jQuery(s).unbind("mouseover")
+		jQuery(s).mouseover((e: dom.Event) => processEvents(e))
+	})
+	List("canvas").foreach(s => {
+		println("Binding mouseleave to " + s)
+		jQuery(s).unbind("mouseleave")
+		jQuery(s).mouseleave((e: dom.Event) => processEvents(e))
 	})
   }
 
@@ -2237,12 +2270,28 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 							  jQuery("#" + hr).value(vv.asInstanceOf[String])
 						  }
 					  }
+                      case "dblclick" => if (dataStore.endsWith("/type=signature")) {
+                        val nstr = jQuery("#" + hr).get(0).asInstanceOf[html.Canvas]
+                        sigs += hr -> new SignaturePad(nstr)
+                        sigs(hr).clear()
+                      }
 					  case "click" => if (dataStore.endsWith("/type=checkbox")) {
 						  val checked = jQuery("#" + hr).prop("checked").asInstanceOf[Boolean]
                           val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
 						  println("checked to store: " + checked)
 						  updateObject("data", hier, checked)
 					  }
+                      case "mouseover" => if (dataStore.endsWith("/type=signature")) jQuery("#menumobile").removeAttr("swipeable")
+                      case "mouseleave" => if (dataStore.endsWith("/type=signature")) {
+                        jQuery("#menumobile").attr("swipeable","")
+                        println("Gathering signature data for " + hr)
+                        val nstr = jQuery("#" + hr).get(0).asInstanceOf[html.Canvas]
+                        val dta = nstr.toDataURL("image/png")
+                        val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
+                        //jQuery("#" + hr).attr("value", nstr)
+                        println("dta: " + dta)
+                        updateObject("data", hier, dta)
+                      }
 					  case _ =>
 				  }
 			  }
