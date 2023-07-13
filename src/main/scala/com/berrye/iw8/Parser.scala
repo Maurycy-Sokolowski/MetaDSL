@@ -1812,6 +1812,16 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 		jQuery(s).unbind("mouseleave")
 		jQuery(s).mouseleave((e: dom.Event) => processEvents(e))
 	})
+	List("canvas").foreach(s => {
+		println("Binding touchstart to " + s)
+		jQuery(s).unbind("touchstart")
+		jQuery(s).mouseover((e: dom.Event) => processEvents(e))
+	})
+	List("canvas").foreach(s => {
+		println("Binding touchend to " + s)
+		jQuery(s).unbind("touchend")
+		jQuery(s).mouseleave((e: dom.Event) => processEvents(e))
+	})
   }
 
   def transit(t: Context) = {
@@ -2283,6 +2293,17 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 					  }
                       case "mouseover" => if (dataStore.endsWith("/type=signature")) jQuery("#menumobile").removeAttr("swipeable")
                       case "mouseleave" => if (dataStore.endsWith("/type=signature")) {
+                        jQuery("#menumobile").attr("swipeable","")
+                        println("Gathering signature data for " + hr)
+                        val nstr = jQuery("#" + hr).get(0).asInstanceOf[html.Canvas]
+                        val dta = nstr.toDataURL("image/png")
+                        val hier = dataStore.split("/").dropRight(1).filter(!_.isEmpty)
+                        //jQuery("#" + hr).attr("value", nstr)
+                        println("dta: " + dta)
+                        updateObject("data", hier, dta)
+                      }
+                      case "touchstart" => if (dataStore.endsWith("/type=signature")) jQuery("#menumobile").removeAttr("swipeable")
+                      case "touchend" => if (dataStore.endsWith("/type=signature")) {
                         jQuery("#menumobile").attr("swipeable","")
                         println("Gathering signature data for " + hr)
                         val nstr = jQuery("#" + hr).get(0).asInstanceOf[html.Canvas]
