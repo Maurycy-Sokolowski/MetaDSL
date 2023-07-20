@@ -13,7 +13,7 @@ import org.scalajs.jquery._
 import org.scalajs.jquery.{jQuery => JQ, JQueryAjaxSettings, JQueryXHR}
 import scalatags.JsDom.all._
 import scalatags.JsDom._
-import org.scalajs.dom.raw.HTMLImageElement
+import org.scalajs.dom.raw._
 import org.scalajs.dom._
 import org.scalajs.dom.html
 import js.Dynamic.{ global => g }
@@ -211,9 +211,11 @@ object WebParser extends JavaTokenParsers with Positional {
   val onsTemplate = tag("ons-template")
   val video = tag("video")
 
-  case class StaticEntry(value: String, typ: String, back: Boolean, sp: Option[StaticStruct])
-  def staticEntry = stringToken ~ (("button" | "checkbox" | "text" | "signature")?) ~ (("back")?) ~ ((staticStruct)?) ^^ {
-    case s ~ t ~ b ~ p => StaticEntry(s, Try(t.get).getOrElse("button"), b.isDefined, p)
+    var wsconn: Option[WebSocket] = None
+
+  case class StaticEntry(value: String, typ: String, back: Boolean, ws: Option[String], sp: Option[StaticStruct])
+  def staticEntry = stringToken ~ (("button" | "checkbox" | "text" | "signature")?) ~ (("back")?) ~ (("ws" ~> stringToken)?) ~ ((staticStruct)?) ^^ {
+    case s ~ t ~ b ~ ws ~ p => StaticEntry(s, Try(t.get).getOrElse("button"), b.isDefined, ws, p)
   }
 
   case class StaticStruct(l: List[StaticEntry])
@@ -712,7 +714,17 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 						println("dataStore: " + dataStore + " -> " + (if (vv != null) vv.toString else "None"))
                         el.typ match {
                           case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (vv != null && vv.asInstanceOf[Boolean]) `checked` := ""))
-                          case "text" => onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
+                          case "text" => {
+                              if (el.ws.isDefined && vv != null) {
+                                    println("Websocket defined for " + el.value + " at " + el.ws.get)
+                                    wsconn = Some(new WebSocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String]))
+                                    wsconn.get.onopen = { (event: Event) => println("Connection successful: " + event) }
+                                    wsconn.get.onerror = { (event: Event) => println("Connection error: " + event.asInstanceOf[ErrorEvent]) }
+                                    wsconn.get.onmessage = { (event: MessageEvent) => println("Message: " + event.data.toString) }
+                                    wsconn.get.onclose = { (event: Event) => println("Connection closed: " + event.asInstanceOf[CloseEvent]) }
+                              }
+                              onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
+                          }
                           case "signature" => {
                             setTimeout(1000) {
                                 val canvas = jQuery("#" + idd).get(0).asInstanceOf[html.Canvas]
