@@ -729,8 +729,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
                                     }}
                                     wsconn.get.onmessage = { (event: MessageEvent) => println("Message: " + event.data.toString) }
-                                    wsconn.get.onclose = { (event: Event) => {
-                                        println("Connection closed: " + event.asInstanceOf[CloseEvent])
+                                    wsconn.get.onclose = { (event: CloseEvent) => {
+                                        println("Connection closed: " + event)
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
                                     }}
