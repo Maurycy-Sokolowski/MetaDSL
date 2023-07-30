@@ -41,21 +41,21 @@ import Charts._
 import ImplicitHash.SHA256Ops
 
 object WebParser extends JavaTokenParsers with Positional {
-  val store = window.localStorage
-  var scriptVal: Option[ScriptCls] = None
-  var name = ""
-  var pages = Map[String, () => JsDom.TypedTag[org.scalajs.dom.raw.Element]]()
-  var sigs = Map[String, SignaturePad]()
-  var dropdownsLoad = Map[String, Formats]()
-  var dropdowns = Map[String, Map[Int, String]]()
-  var menu = List[(String, String, Option[List[String]])]()
-  var submenu = List[String]()
-  var currentElement = ""
-  var menus = ("", "")
-  var selections = Map[String,String]()
-  var timer: SetTimeoutHandle = _
-  var mobileSite = false
-  var mobileContext = Map[String,Any]()
+    val store = window.localStorage
+    var scriptVal: Option[ScriptCls] = None
+    var name = ""
+    var pages = Map[String, () => JsDom.TypedTag[org.scalajs.dom.raw.Element]]()
+    var sigs = Map[String, SignaturePad]()
+    var dropdownsLoad = Map[String, Formats]()
+    var dropdowns = Map[String, Map[Int, String]]()
+    var menu = List[(String, String, Option[List[String]])]()
+    var submenu = List[String]()
+    var currentElement = ""
+    var menus = ("", "")
+    var selections = Map[String,String]()
+    var timer: SetTimeoutHandle = _
+    var mobileSite = false
+    var mobileContext = Map[String,Any]()
 
   case class Context(element: String = "", tr: Transition = Transition("", None), response: js.Dynamic = js.Object.asInstanceOf[js.Dynamic])
   var transitions = List[Context]()
@@ -715,13 +715,25 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                         el.typ match {
                           case "checkbox" => onsListItem(modifier := "longdivider", onsCheckbox(id := idd, modifier := "large", el.value, attr("data-store") := dataStore, if (vv != null && vv.asInstanceOf[Boolean]) `checked` := ""))
                           case "text" => {
-                              if (el.ws.isDefined && vv != null) {
+                              if (el.ws.isDefined && vv != null) setTimeout(1000) {
                                     println("Websocket defined for " + el.value + " at " + el.ws.get)
                                     wsconn = Some(new WebSocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String]))
-                                    wsconn.get.onopen = { (event: Event) => println("Connection successful: " + event) }
-                                    wsconn.get.onerror = { (event: Event) => println("Connection error: " + event.asInstanceOf[ErrorEvent]) }
+                                    wsconn.get.onopen = { (event: Event) => {
+                                        println("Connection successful: " + event)
+                                        jQuery("#" + idd).animate(js.Dynamic.literal(background = "green"),1000)
+                                        jQuery("#" + idd).css(js.Dynamic.literal(background = "green"))
+                                    }}
+                                    wsconn.get.onerror = { (event: Event) => {
+                                        println("Connection error: " + event.asInstanceOf[ErrorEvent])
+                                        jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
+                                        jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
+                                    }}
                                     wsconn.get.onmessage = { (event: MessageEvent) => println("Message: " + event.data.toString) }
-                                    wsconn.get.onclose = { (event: Event) => println("Connection closed: " + event.asInstanceOf[CloseEvent]) }
+                                    wsconn.get.onclose = { (event: Event) => {
+                                        println("Connection closed: " + event.asInstanceOf[CloseEvent])
+                                        jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
+                                        jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
+                                    }}
                               }
                               onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
                           }
