@@ -723,8 +723,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "green"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "green"))
                                     }}
-                                    wsconn.get.onerror = { x: ErrorEvent => {
-                                        println("Connection error: " + x.asInstanceOf[ErrorEvent])
+                                    wsconn.get.onerror = { (event: Event) => {
+                                        println("Connection error: " + event.asInstanceOf[ErrorEvent])
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
                                     }}
