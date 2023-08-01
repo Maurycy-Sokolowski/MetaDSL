@@ -724,7 +724,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "green"))
                                     }}
                                     wsconn.get.onerror = { (event: Event) => {
-                                        println("Connection error: " + event.asInstanceOf[ErrorEvent])
+                                        println("Connection error: " + event.asInstanceOf[ErrorEvent].message)
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
                                     }}
