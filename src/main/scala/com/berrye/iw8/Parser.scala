@@ -720,6 +720,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                                     wsconn = Some(new WebSocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String]))
                                     wsconn.get.onopen = { (event: Event) => {
                                         println("Connection successful: " + event)
+                                        wsconn.get.send(store.getItem("data").asInstanceOf[String])
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "green"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "green"))
                                     }}
