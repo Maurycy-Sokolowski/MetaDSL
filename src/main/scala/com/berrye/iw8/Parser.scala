@@ -696,7 +696,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                       onsListHeader(header),
                       for (el <- static.l) yield {
                         val idd = UUID.uuid.replaceAll("-","")
-                        if (el.sp.isDefined) jQuery(document).on("click", "#" + idd, (ev: JQueryEventObject) => {
+                        if (el.sp.isDefined) jQuery(document).on("click", "#" + idd, (ev: JQueryEventObject) => setTimeout(500) {
                           currPanel = ""
                           jQuery("#mainpanel").empty()
                           jQuery("#mainpanel").append(produce(accum + "/" + el.value, el.value, el.sp.get, Some(pp.render)).render)
