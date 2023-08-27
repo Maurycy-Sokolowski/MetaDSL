@@ -178,6 +178,7 @@ object WebParser extends JavaTokenParsers with Positional {
   val autoscroll = attr("auto-scroll")
   val fullscreen = attr("fullscreen")
   val icon = attr("icon")
+  val activeIcon = attr("active-icon")
   val labelOns = attr("label")
   val overscrollable = attr("overscrollable")
   val page = attr("page")
@@ -564,7 +565,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                       div(cls := "center", s)
                     ),
                     onsTabbar(swipeable := "", id := "maintabbar",
-                      for (sp <- menu) yield onsTab(labelOns := sp._1, id := "tab_" + sp._1, icon := "md-menu")
+                      for (sp <- menu) yield onsTab(labelOns := sp._1, id := "tab_" + sp._1.asId, icon := (if (sp._1.equals(menu.head._1)) "md-plus" else "md-menu"))
                     )
                   )
                 )
@@ -2235,7 +2236,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           widgetRef = ""
         }
       }
-      case _ => if (hr.startsWith("tab_")) repPage(hr.substring(4)) else if (hr.startsWith("setrange")) {
+      case _ => if (hr.startsWith("tab_")) {
+          menu.map("tab_" + _._1.asId).filter(!_.equals(hr)).foreach(v => jQuery("#" + v).attr("icon", "md-menu"))
+          jQuery("#" + hr).attr("icon", "md-plus")
+          repPage(hr.substring(4))
+      } else if (hr.startsWith("setrange")) {
           val days = Try(hr.replaceAll("setrange","").toLong).getOrElse(7L)
           val nowStr = Moment().local().format("MM/DD/YYYY") + " 11:59 PM"
           val fromStr = Moment().local().add(-days + 1, "days").format("MM/DD/YYYY") +  " 00:00 AM"
