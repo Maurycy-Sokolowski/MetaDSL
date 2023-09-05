@@ -212,7 +212,7 @@ object WebParser extends JavaTokenParsers with Positional {
   val onsTemplate = tag("ons-template")
   val video = tag("video")
 
-    var wsconn: Option[WebSocket] = None
+    var wsconn: Option[ReconnectingWebsocket] = None
 
   case class StaticEntry(value: String, typ: String, back: Boolean, ws: Option[String], sp: Option[StaticStruct])
   def staticEntry = stringToken ~ (("button" | "checkbox" | "text" | "signature")?) ~ (("back")?) ~ (("ws" ~> stringToken)?) ~ ((staticStruct)?) ^^ {
@@ -718,7 +718,27 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                           case "text" => {
                               if (el.ws.isDefined && vv != null) setTimeout(1000) {
                                     println("Websocket defined for " + el.value + " at " + el.ws.get)
-                                    wsconn = Some(new WebSocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String]))
+                                    wsconn = Some(new ReconnectingWebsocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String],
+                                        onOpen = { (event: Event) => {
+                                            println("Connection successful: " + event)
+                                            wsconn.get.send(store.getItem("data").asInstanceOf[String])
+                                            jQuery("#" + idd).animate(js.Dynamic.literal(background = "green"),1000)
+                                            jQuery("#" + idd).css(js.Dynamic.literal(background = "green"))
+                                        }},
+                                        onClose = { (event: CloseEvent) => {
+                                            println("Connection closed: " + event)
+                                            jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
+                                            jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
+                                        }},
+                                        onMessage = { (event: MessageEvent) => println("Message: " + event.data.toString) }
+                                    ))
+                                    //    debug = true,
+                                    //    onMessage = { event =>
+                                    //        val msg = read[ProcessUpdateMessage](event.data.toString)
+                                    //        println(s"Websocket: We got a message! ${msg}")
+                                    //        refresh.runNow()
+                                    //    })
+                                    /*wsconn = Some(new WebSocket(el.ws.get + "?" + el.value + "=" + vv.asInstanceOf[String]))
                                     wsconn.get.onopen = { (event: Event) => {
                                         println("Connection successful: " + event)
                                         wsconn.get.send(store.getItem("data").asInstanceOf[String])
@@ -735,7 +755,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                                         println("Connection closed: " + event)
                                         jQuery("#" + idd).animate(js.Dynamic.literal(background = "red"),1000)
                                         jQuery("#" + idd).css(js.Dynamic.literal(background = "red"))
-                                    }}
+                                    }}*/
                               }
                               onsListItem(onsInput(id := idd, `type` := el.typ, placeholder := el.value, attr("data-store") := dataStore, if (vv != null) attr("value") := vv.asInstanceOf[String]))
                           }
@@ -2237,9 +2257,8 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
         }
       }
       case _ => if (hr.startsWith("tab_")) {
-          menu.map("tab_" + _._1.asId).filter(!_.equals(hr)).foreach(v => jQuery("#" + v).attr("icon", "md-menu"))
-          jQuery("#" + hr).attr("icon", "md-plus")
-          repPage(hr.substring(4))
+        menu.map("tab_" + _._1.asId).foreach(v => jQuery("#" + v).attr("icon", if (v.equals(hr)) "md-plus" else "md-menu"))
+        repPage(hr.substring(4))
       } else if (hr.startsWith("setrange")) {
           val days = Try(hr.replaceAll("setrange","").toLong).getOrElse(7L)
           val nowStr = Moment().local().format("MM/DD/YYYY") + " 11:59 PM"
