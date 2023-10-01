@@ -565,7 +565,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                       div(cls := "center", s)
                     ),
                     onsTabbar(swipeable := "", id := "maintabbar",
-                      for (sp <- menu) yield onsTab(labelOns := sp._1, id := "tab_" + sp._1.asId, icon := (if (sp._1.equals(menu.head._1)) "md-plus" else "md-menu"))
+                      for (sp <- menu) yield onsTab(labelOns := sp._1, id := "tab_" + sp._1, icon := (if (sp._1.equals(menu.head._1)) "md-plus" else "md-menu"))
                     )
                   )
                 )
@@ -1756,6 +1756,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 
   def replacePanel(p: String, force: Boolean = false) = if ((force || !p.equals(currPanel)) && (!p.equals("dashboard") || "dashboard".notPresent)) {
     println("loading " + p)
+    menu.map(_._1).foreach(v => jQuery("#" + "tab_" + v).attr("icon", if (v.equals(p)) "md-plus" else "md-menu"))
   	currPanel = p
     pages.filterKeys(k => (force || !k.equals(p)) && !k.equals("main")).foreach(k => jQuery("#" + k._1.asId).remove())
     if ("mainpanel".notPresent) {
@@ -2256,10 +2257,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           widgetRef = ""
         }
       }
-      case _ => if (hr.startsWith("tab_")) {
-        menu.map("tab_" + _._1.asId).foreach(v => jQuery("#" + v).attr("icon", if (v.equals(hr)) "md-plus" else "md-menu"))
-        repPage(hr.substring(4))
-      } else if (hr.startsWith("setrange")) {
+      case _ => if (hr.startsWith("tab_")) repPage(hr.substring(4)) else if (hr.startsWith("setrange")) {
           val days = Try(hr.replaceAll("setrange","").toLong).getOrElse(7L)
           val nowStr = Moment().local().format("MM/DD/YYYY") + " 11:59 PM"
           val fromStr = Moment().local().add(-days + 1, "days").format("MM/DD/YYYY") +  " 00:00 AM"
