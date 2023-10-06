@@ -48,7 +48,8 @@ object WebParser extends JavaTokenParsers with Positional {
     var sigs = Map[String, SignaturePad]()
     var dropdownsLoad = Map[String, Formats]()
     var dropdowns = Map[String, Map[Int, String]]()
-    var menu = List[(String, String, Option[List[String]])]()
+    case class Menu(name: String, t: String, active: Option[String], inactive: Option[String], sub: Option[List[String]])
+    var menu = List[Menu]()
     var submenu = List[String]()
     var currentElement = ""
     var menus = ("", "")
@@ -240,14 +241,14 @@ object WebParser extends JavaTokenParsers with Positional {
         store.setItem(key, stringify(obj))
     }
 
-def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" ~> stringToken)?) ~ (("lines" ~> "{" ~> rep(stringToken) <~ "}")?) ~ (("footer" ~> stringToken)?) ~ ("dashboard" | "dasheader" | "login" | "main" | "menu" | "table" | "page") ~ (("items" ~> wholeNumber)?) ~ (wholeNumber?) ~ (header?) ~ ("show"?) ~ (("color" ~> stringToken)?) ~ (("background" ~> stringToken)?) ~ (("script" ~> scriptTok)?) ~ (("with" ~> "{" ~> rep(elements) <~ "}")?) ~ (("display" ~> "{" ~> query <~ "}")?) ~ (rep(panel)?) ~ (rep(go)?) ~ (("widgets" ~> "{" ~> rep(widgets) <~ "}")?) ~ (("entries" ~> "{" ~> rep(reports) <~ "}")?) ~ ((staticStruct)?) ^^ {
-    case s ~ title ~ message ~ lines ~ footer ~ t ~ itemsNum ~ days ~ header ~ sh ~ mainColor ~ back ~ scriptEl ~ elems ~ disp ~ pl ~ trans ~ widg ~ men ~ static => {
-      println("adding " + s + ", " + t)
+def pageSite = "add" ~> stringToken ~ (("active" ~> stringToken)?) ~ (("inactive" ~> stringToken)?) ~ (("title" ~> stringToken)?) ~ (("message" ~> stringToken)?) ~ (("lines" ~> "{" ~> rep(stringToken) <~ "}")?) ~ (("footer" ~> stringToken)?) ~ ("dashboard" | "dasheader" | "login" | "main" | "menu" | "table" | "page") ~ (("items" ~> wholeNumber)?) ~ (wholeNumber?) ~ (header?) ~ ("show"?) ~ (("color" ~> stringToken)?) ~ (("background" ~> stringToken)?) ~ (("script" ~> scriptTok)?) ~ (("with" ~> "{" ~> rep(elements) <~ "}")?) ~ (("display" ~> "{" ~> query <~ "}")?) ~ (rep(panel)?) ~ (rep(go)?) ~ (("widgets" ~> "{" ~> rep(widgets) <~ "}")?) ~ (("entries" ~> "{" ~> rep(reports) <~ "}")?) ~ ((staticStruct)?) ^^ {
+    case s ~ iconActive ~ iconInactive ~ title ~ message ~ lines ~ footer ~ typePage ~ itemsNum ~ days ~ header ~ sh ~ mainColor ~ back ~ scriptEl ~ elems ~ disp ~ pl ~ trans ~ widg ~ men ~ static => {
+      println("adding " + s + ", " + typePage)
       val mainRef = s.asId + UUID.uuid.replaceAll("-","")
       currentElement = s
-      t match {
+      typePage match {
         case "dashboard" => {
-          menu = menu ++ List((s, t, None))
+          menu = menu ++ List(Menu(s, typePage, iconActive, iconInactive, None))
           pages += s -> (() => {
             searchablePanel = None
             if (header.isDefined) {
@@ -495,20 +496,20 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 	        val params = menus._1.split(",").toList
 		    one(currentContext.get.response, params.drop(1))
           }
-           def createMobileMenu = {
-            var idx = 0
-	          def menuMobile(title: String, titleacc: List[String], elem: js.Dynamic, array: List[String]): JsDom.TypedTag[org.scalajs.dom.raw.Element] = array match {
-					    case ar :: idd :: name :: rest => {
-					    	val ref = "menuentry" + idx
-                idx = idx + 1
-                val e = elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList(0)
-                onsListItem(href := "#selection_" + idd + "_" + e.extractV(idd).asInstanceOf[String], tappable := "", e.extractV(name).asInstanceOf[String])
-					    }
-	          	case _ => onsListItem()
-	          }
-	          val params = menus._1.split(",").toList
-		        menuMobile(params(0), List(), currentContext.get.response, params.drop(1))
-          }
+            def createMobileMenu = {
+                var idx = 0
+                def menuMobile(title: String, titleacc: List[String], elem: js.Dynamic, array: List[String]): JsDom.TypedTag[org.scalajs.dom.raw.Element] = array match {
+                    case ar :: idd :: name :: rest => {
+                        val ref = "menuentry" + idx
+                        idx = idx + 1
+                        val e = elem.extractV(ar).asInstanceOf[js.Array[js.Dynamic]].toList(0)
+                        onsListItem(href := "#selection_" + idd + "_" + e.extractV(idd).asInstanceOf[String], tappable := "", e.extractV(name).asInstanceOf[String])
+                    }
+                    case _ => onsListItem()
+                }
+                val params = menus._1.split(",").toList
+                menuMobile(params(0), List(), currentContext.get.response, params.drop(1))
+            }
           def createMenu = {
             var idx = 0
 	          def menu(title: String, titleacc: List[String], elem: js.Dynamic, array: List[String]): JsDom.TypedTag[html.LI] = array match {
@@ -550,7 +551,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                   onsPage(
                     onsList(
                       createMobileMenu,
-                      for (sp <- menu) yield onsListItem(id := sp._1, sp._1, tappable := "", modifier := "chevron")
+                      for (sp <- menu) yield onsListItem(id := sp.name, sp.name, tappable := "", modifier := "chevron")
                     )
                   )
                 ),
@@ -565,7 +566,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                       div(cls := "center", s)
                     ),
                     onsTabbar(swipeable := "", id := "maintabbar",
-                      for (sp <- menu) yield onsTab(labelOns := sp._1, id := "tab_" + sp._1, icon := (if (sp._1.equals(menu.head._1)) "md-plus" else "md-menu"))
+                        for (sp <- menu) yield onsTab(labelOns := sp.name, id := "tab_" + sp.name, icon := (if (sp.name.equals(menu.head.name)) {
+                            if (sp.active.isDefined) sp.active.get else "md-plus"
+                        } else {
+                            if (sp.inactive.isDefined) sp.inactive.get else "md-menu"
+                        }))
                     )
                   )
                 )
@@ -593,25 +598,25 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
                     createMenu()),
                   ul(
                     cls := "nav",
-                    for (sp <- menu) yield (if (sp._2.equals("menu")) li(
-                      a(attr("data-toggle") := "collapse", href := "#" + sp._1 + "submenu",
+                    for (sp <- menu) yield (if (sp.t.equals("menu")) li(
+                      a(attr("data-toggle") := "collapse", href := "#" + sp.name + "submenu",
                         i(cls := "now-ui-icons business_chart-pie-36"),
                         p(
-                          sp._1,
+                          sp.name,
                           b(cls := "caret"))),
-                      div(cls := "collapse", id := sp._1 + "submenu",
+                      div(cls := "collapse", id := sp.name + "submenu",
                         ul(
                           cls := "nav",
-                          if (sp._3.isDefined) for (st <- sp._3.get) yield li(
+                          if (sp.sub.isDefined) for (st <- sp.sub.get) yield li(
                             a(
                               href := "#" + st,
                               span(cls := "sidebar-mini-icon", st.substring(0, 2)),
                               span(cls := "sidebar-normal", st))))))
                     else li(
                       a(
-                        href := "#" + sp._1,
-                        i(cls := "now-ui-icons " + (if (sp._2.equals("dashboard")) "design_app" else if (sp._2.equals("table")) "design_bullet-list-67" else if (sp._2.equals("menu")) "design_bullet-list-67" else "design_app")),
-                        p(sp._1))))),
+                        href := "#" + sp.name,
+                        i(cls := "now-ui-icons " + (if (sp.t.equals("dashboard")) "design_app" else if (sp.t.equals("table")) "design_bullet-list-67" else if (sp.t.equals("menu")) "design_bullet-list-67" else "design_app")),
+                        p(sp.name))))),
                   ul(
                     cls := "nav",
                     for (e <- elems.get.filter(e => e.typ.equals("link"))) yield {
@@ -672,11 +677,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
             })
         }
         case "menu" => {
-          menu = menu ++ List((s, t, Some(submenu)))
+          menu = menu ++ List(Menu(s, typePage, iconActive, iconInactive, Some(submenu)))
           submenu = List[String]()
         }
         case "page" => {
-          menu = menu ++ List((s, t, None))
+          menu = menu ++ List(Menu(s, typePage, iconActive, iconInactive, None))
           pages += s -> (() => onsPage(id := s.asId,
             onsList(modifier := "inset",
               onsListHeader(lines.get(0)),
@@ -687,7 +692,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
           )
         }
         case "table" => {
-          menu = menu ++ List((s, t, None))
+          menu = menu ++ List(Menu(s, typePage, iconActive, iconInactive, None))
           pages += s -> (() => if (static.isDefined && static.get.l.size > 0) {
             def produce(accum: String, header: String, static: StaticStruct, prev: Option[org.scalajs.dom.Node] = None): JsDom.TypedTag[org.scalajs.dom.raw.Element] = {
               lazy val pp: JsDom.TypedTag[org.scalajs.dom.raw.Element] = onsPage(id := s.asId,
@@ -1756,7 +1761,11 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
 
   def replacePanel(p: String, force: Boolean = false) = if ((force || !p.equals(currPanel)) && (!p.equals("dashboard") || "dashboard".notPresent)) {
     println("loading " + p)
-    menu.map(_._1).foreach(v => jQuery("#" + "tab_" + v).attr("icon", if (v.equals(p)) "md-plus" else "md-menu"))
+    menu.foreach(v => jQuery("#" + "tab_" + v.name).attr("icon", if (v.name.equals(p)) {
+        if (v.active.isDefined) v.active.get else "md-plus"
+    } else {
+        if (v.inactive.isDefined) v.inactive.get else "md-menu"
+    }))
   	currPanel = p
     pages.filterKeys(k => (force || !k.equals(p)) && !k.equals("main")).foreach(k => jQuery("#" + k._1.asId).remove())
     if ("mainpanel".notPresent) {
@@ -1796,7 +1805,7 @@ def pageSite = "add" ~> stringToken ~ (("title" ~> stringToken)?) ~ (("message" 
     name = ""
     pages = Map[String, () => scalatags.JsDom.TypedTag[org.scalajs.dom.html.Element]]()
     transitions = List[Context]()
-    menu = List[(String, String, Option[List[String]])]()
+    menu = List[Menu]()
     submenu = List[String]()
     currentElement = ""
     menus = ("", "")
